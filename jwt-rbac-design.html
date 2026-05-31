@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JWT Auth Flow & RBAC Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Fraunces:wght@300;400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f2ec;
+  --surface:  #fdfaf5;
+  --ink:      #1a1612;
+  --ink2:     #3d3530;
+  --muted:    #8c7f74;
+  --border:   #ddd6cc;
+  --border2:  #c8bfb4;
+
+  --amber:    #c4700a;
+  --amber-bg: #fff3e0;
+  --amber-b:  #e8c48a;
+
+  --teal:     #0a6b5c;
+  --teal-bg:  #e4f2ef;
+  --teal-b:   #8abfb8;
+
+  --red:      #b83232;
+  --red-bg:   #fceaea;
+  --red-b:    #e8a8a8;
+
+  --blue:     #1a4f8a;
+  --blue-bg:  #e8eef8;
+  --blue-b:   #9ab4d8;
+
+  --violet:   #5c2d8a;
+  --violet-bg:#f0eaf8;
+  --violet-b: #c4a8e0;
+
+  --green:    #276b2a;
+  --green-bg: #eaf4eb;
+  --green-b:  #9ecfa1;
+
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Fraunces', serif;
+  --body: 'DM Sans', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* NAV TABS */
+.tabs {
+  background: var(--surface);
+  border-bottom: 2px solid var(--border2);
+  display: flex;
+  padding: 0 48px;
+  gap: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.tab {
+  padding: 16px 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.18s;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+/* PANELS */
+.panel { display: none; padding: 48px; max-width: 1400px; margin: 0 auto; }
+.panel.active { display: block; }
+
+/* PAGE TITLE */
+.page-title {
+  font-family: var(--display);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.page-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 40px;
+  font-style: italic;
+}
+
+/* FLOW DIAGRAM */
+.flow-container {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  padding: 40px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.flow-container::before {
+  content: attr(data-label);
+  position: absolute;
+  top: 16px; left: 24px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* SEQUENCE FLOW */
+.seq-actors {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+  position: relative;
+}
+.actor {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.actor-box {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 2;
+  background: var(--surface);
+}
+.actor-line {
+  position: absolute;
+  left: 50%;
+  top: 44px;
+  bottom: -8px;
+  width: 1.5px;
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.actor.client .actor-box  { border-color: var(--blue-b);   color: var(--blue);   background: var(--blue-bg); }
+.actor.client .actor-line { background: var(--blue-b); }
+.actor.gateway .actor-box { border-color: var(--amber-b);  color: var(--amber);  background: var(--amber-bg); }
+.actor.gateway .actor-line{ background: var(--amber-b); }
+.actor.auth .actor-box    { border-color: var(--teal-b);   color: var(--teal);   background: var(--teal-bg); }
+.actor.auth .actor-line   { background: var(--teal-b); }
+.actor.redis .actor-box   { border-color: var(--red-b);    color: var(--red);    background: var(--red-bg); }
+.actor.redis .actor-line  { background: var(--red-b); }
+.actor.svc .actor-box     { border-color: var(--violet-b); color: var(--violet); background: var(--violet-bg); }
+.actor.svc .actor-line    { background: var(--violet-b); }
+
+/* SEQUENCE STEPS */
+.seq-steps { position: relative; padding: 12px 0; }
+.seq-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 4px;
+  position: relative;
+  min-height: 40px;
+}
+.seq-arrow {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+.arrow-line {
+  position: absolute;
+  height: 1.5px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+.arrow-line.dashed {
+  background: repeating-linear-gradient(90deg, currentColor 0, currentColor 5px, transparent 5px, transparent 10px);
+}
+.arrow-head {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  z-index: 2;
+}
+.arrow-label {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  white-space: nowrap;
+  background: var(--surface);
+  padding: 1px 6px;
+  border-radius: 2px;
+  z-index: 3;
+}
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 8px;
+  border: 1.5px solid;
+}
+
+/* STEPS TABLE */
+.steps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.steps-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1.5px solid var(--border2);
+  background: var(--bg);
+}
+.steps-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--ink2);
+}
+.steps-table tr:last-child td { border-bottom: none; }
+.steps-table tr:hover td { background: var(--bg); }
+
+code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  padding: 1px 6px;
+  border-radius: 2px;
+  color: var(--amber);
+}
+.pill {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  border: 1px solid;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pill-teal   { background: var(--teal-bg);   color: var(--teal);   border-color: var(--teal-b); }
+.pill-amber  { background: var(--amber-bg);  color: var(--amber);  border-color: var(--amber-b); }
+.pill-red    { background: var(--red-bg);    color: var(--red);    border-color: var(--red-b); }
+.pill-blue   { background: var(--blue-bg);   color: var(--blue);   border-color: var(--blue-b); }
+.pill-violet { background: var(--violet-bg); color: var(--violet); border-color: var(--violet-b); }
+.pill-green  { background: var(--green-bg);  color: var(--green);  border-color: var(--green-b); }
+.pill-gray   { background: var(--bg);        color: var(--muted);  border-color: var(--border2); }
+
+/* FLOW VISUAL */
+.flow-visual {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  position: relative;
+  padding: 48px 0 24px;
+}
+.fv-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+.fv-actor {
+  padding: 10px 16px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+.fv-line {
+  width: 1.5px;
+  flex: 1;
+  min-height: 400px;
+  position: relative;
+  z-index: 0;
+}
+.fv-msg {
+  position: absolute;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Arrows between columns */
+.fv-arrows {
+  position: absolute;
+  top: 68px;
+  left: 0; right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* SECTION HEADING */
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  margin-top: 40px;
+}
+.sec-head:first-child { margin-top: 0; }
+.sec-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-b);
+  padding: 3px 9px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+.sec-head h2 {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* RBAC MATRIX */
+.matrix-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+}
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+.matrix th {
+  padding: 12px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--border2);
+  text-align: center;
+  white-space: nowrap;
+}
+.matrix th:first-child { text-align: left; border-right: 2px solid var(--border2); padding-left: 20px; }
+.matrix td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  font-size: 18px;
+}
+.matrix td:first-child {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink2);
+  border-right: 2px solid var(--border2);
+  padding-left: 20px;
+  white-space: nowrap;
+}
+.matrix tr:last-child td { border-bottom: none; }
+.matrix tr:hover td { background: var(--bg); }
+.matrix .group-row td {
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border2);
+  text-align: left;
+}
+.matrix .col-customer { background: rgba(10,107,92,0.04); }
+.matrix .col-support  { background: rgba(92,45,138,0.04); }
+.matrix .col-admin    { background: rgba(196,112,10,0.04); }
+
+.allow  { color: var(--green); font-size: 16px; }
+.deny   { color: var(--red);   font-size: 16px; }
+.ro     { color: var(--blue);  font-size: 13px; font-family: var(--mono); }
+.rw     { color: var(--teal);  font-size: 13px; font-family: var(--mono); }
+.own    { color: var(--violet);font-size: 13px; font-family: var(--mono); }
+.cond   { color: var(--amber); font-size: 13px; font-family: var(--mono); }
+
+.matrix th.col-customer { color: var(--teal); }
+.matrix th.col-support  { color: var(--violet); }
+.matrix th.col-admin    { color: var(--amber); }
+
+/* TOKEN ANATOMY */
+.token-anatomy {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.token-header {
+  background: var(--bg);
+  padding: 12px 20px;
+  border-bottom: 1.5px solid var(--border2);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.token-parts {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.token-part {
+  padding: 20px;
+  border-right: 1px solid var(--border);
+}
+.token-part:last-child { border-right: none; }
+.token-part-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.token-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.token-field:last-child { border-bottom: none; }
+.tf-key { font-family: var(--mono); color: var(--muted); font-size: 11px; }
+.tf-val { font-family: var(--mono); font-size: 11px; text-align: right; }
+.tf-val.str  { color: var(--green); }
+.tf-val.num  { color: var(--blue); }
+.tf-val.arr  { color: var(--violet); }
+.tf-val.cust { color: var(--amber); font-weight: 600; }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  padding: 24px;
+}
+.card h4 {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+.card p { font-size: 13px; color: var(--ink2); line-height: 1.7; }
+
+/* ALERT */
+.alert {
+  border-radius: 3px;
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  border-left: 4px solid;
+  margin-bottom: 16px;
+}
+.alert-warn { background: var(--amber-bg); border-color: var(--amber); color: var(--ink2); }
+.alert-info { background: var(--blue-bg);  border-color: var(--blue);  color: var(--ink2); }
+.alert-ok   { background: var(--green-bg); border-color: var(--green); color: var(--ink2); }
+.alert strong { color: var(--ink); }
+
+/* REVOCATION FLOW */
+.rev-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.rev-step {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 20px;
+}
+.rev-step:last-child { padding-bottom: 0; }
+.rev-step:last-child .rev-line { display: none; }
+.rev-icon-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.rev-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 1.5px solid;
+  background: var(--surface);
+  position: relative;
+  z-index: 2;
+}
+.rev-line {
+  width: 1.5px;
+  flex: 1;
+  margin: 4px 0;
+  background: var(--border2);
+}
+.rev-content {
+  padding-top: 6px;
+  flex: 1;
+}
+.rev-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.rev-desc { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+
+/* SVG SEQUENCE */
+.seq-svg-wrap {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  padding: 32px 24px 24px;
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+hr.sec-div {
+  border: none;
+  border-top: 1.5px solid var(--border);
+  margin: 36px 0;
+}
+
+/* LEGEND */
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+.legend-sym { font-size: 15px; }
+
+@media(max-width:768px) {
+  .panel { padding: 24px 16px; }
+  .tabs { padding: 0 16px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .token-parts { grid-template-columns: 1fr; }
+  .token-part { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="showPanel('flows')">Auth Flows</div>
+  <div class="tab" onclick="showPanel('token')">Token Anatomy</div>
+  <div class="tab" onclick="showPanel('rbac')">RBAC Matrix</div>
+  <div class="tab" onclick="showPanel('revocation')">Revocation</div>
+  <div class="tab" onclick="showPanel('impl')">Implementation</div>
+</div>
+
+<!-- ═══════════════════════════════ PANEL: AUTH FLOWS ═══════════════════════ -->
+<div class="panel active" id="panel-flows">
+
+  <p class="page-title">JWT Authentication<br>& Token Lifecycle</p>
+  <p class="page-sub">RS256 asymmetric signing — access token 15 min, refresh token 7 days</p>
+
+  <!-- FLOW 1: REGISTRATION -->
+  <div class="sec-head">
+    <span class="sec-num">FLOW 01</span>
+    <h2>Customer Registration</h2>
+  </div>
+
+  <div class="seq-svg-wrap">
+    <svg viewBox="0 0 900 300" style="width:100%;min-width:600px;font-family:'IBM Plex Mono',monospace;">
+      <!-- Lifeline headers -->
+      <rect x="30" y="20" width="120" height="34" rx="3" fill="#e8eef8" stroke="#9ab4d8" stroke-width="1.5"/>
+      <text x="90" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#1a4f8a">CLIENT</text>
+      <rect x="240" y="20" width="140" height="34" rx="3" fill="#fff3e0" stroke="#e8c48a" stroke-width="1.5"/>
+      <text x="310" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#c4700a">INGRESS</text>
+      <rect x="470" y="20" width="140" height="34" rx="3" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1.5"/>
+      <text x="540" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#0a6b5c">AUTH-SVC</text>
+      <rect x="700" y="20" width="160" height="34" rx="3" fill="#f0eaf8" stroke="#c4a8e0" stroke-width="1.5"/>
+      <text x="780" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#5c2d8a">IDENTITY-SVC</text>
+
+      <!-- Lifelines -->
+      <line x1="90"  y1="54" x2="90"  y2="290" stroke="#9ab4d8"  stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="310" y1="54" x2="310" y2="290" stroke="#e8c48a"  stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="540" y1="54" x2="540" y2="290" stroke="#8abfb8"  stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="780" y1="54" x2="780" y2="290" stroke="#c4a8e0"  stroke-width="1.5" stroke-dasharray="4,4"/>
+
+      <!-- Step 1 -->
+      <line x1="90" y1="90" x2="304" y2="90" stroke="#1a4f8a" stroke-width="1.5"/>
+      <polygon points="304,85 314,90 304,95" fill="#1a4f8a"/>
+      <rect x="140" y="74" width="120" height="16" fill="#f5f2ec"/>
+      <text x="200" y="86" text-anchor="middle" font-size="10" fill="#1a4f8a">POST /auth/register</text>
+
+      <!-- Step 2 -->
+      <line x1="316" y1="110" x2="534" y2="110" stroke="#c4700a" stroke-width="1.5"/>
+      <polygon points="534,105 544,110 534,115" fill="#c4700a"/>
+      <rect x="360" y="95" width="130" height="16" fill="#f5f2ec"/>
+      <text x="425" y="107" text-anchor="middle" font-size="10" fill="#c4700a">forward request</text>
+
+      <!-- Step 3 -->
+      <line x1="544" y1="130" x2="774" y2="130" stroke="#0a6b5c" stroke-width="1.5"/>
+      <polygon points="774,125 784,130 774,135" fill="#0a6b5c"/>
+      <rect x="590" y="115" width="140" height="16" fill="#f5f2ec"/>
+      <text x="660" y="127" text-anchor="middle" font-size="10" fill="#0a6b5c">create profile (internal)</text>
+
+      <!-- Step 4 return from identity -->
+      <line x1="774" y1="155" x2="550" y2="155" stroke="#5c2d8a" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="550,150 540,155 550,160" fill="#5c2d8a"/>
+      <rect x="600" y="140" width="130" height="16" fill="#f5f2ec"/>
+      <text x="665" y="152" text-anchor="middle" font-size="10" fill="#5c2d8a">userId created</text>
+
+      <!-- Step 5 hash + store creds -->
+      <rect x="520" y="165" width="40" height="30" rx="2" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1"/>
+      <text x="540" y="184" text-anchor="middle" font-size="9" fill="#0a6b5c">bcrypt</text>
+
+      <!-- Step 6 return 201 -->
+      <line x1="534" y1="215" x2="316" y2="215" stroke="#0a6b5c" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="316,210 306,215 316,220" fill="#0a6b5c"/>
+      <rect x="360" y="200" width="130" height="16" fill="#f5f2ec"/>
+      <text x="425" y="212" text-anchor="middle" font-size="10" fill="#0a6b5c">201 Created (userId)</text>
+
+      <!-- Step 7 return to client -->
+      <line x1="304" y1="240" x2="96" y2="240" stroke="#c4700a" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="96,235 86,240 96,245" fill="#c4700a"/>
+      <rect x="135" y="225" width="125" height="16" fill="#f5f2ec"/>
+      <text x="197" y="237" text-anchor="middle" font-size="10" fill="#c4700a">201 — userId only</text>
+
+      <!-- Note: no token on register -->
+      <rect x="30" y="258" width="220" height="22" rx="2" fill="#fceaea" stroke="#e8a8a8" stroke-width="1"/>
+      <text x="140" y="274" text-anchor="middle" font-size="10" fill="#b83232">⚠ No token issued on register — must login</text>
+
+      <!-- Step numbers -->
+      <circle cx="90" cy="90" r="8" fill="#1a4f8a"/>
+      <text x="90" y="94" text-anchor="middle" font-size="9" fill="white" font-weight="600">1</text>
+      <circle cx="310" cy="110" r="8" fill="#c4700a"/>
+      <text x="310" y="114" text-anchor="middle" font-size="9" fill="white" font-weight="600">2</text>
+      <circle cx="540" cy="130" r="8" fill="#0a6b5c"/>
+      <text x="540" y="134" text-anchor="middle" font-size="9" fill="white" font-weight="600">3</text>
+      <circle cx="540" cy="215" r="8" fill="#0a6b5c"/>
+      <text x="540" y="219" text-anchor="middle" font-size="9" fill="white" font-weight="600">4</text>
+    </svg>
+  </div>
+
+  <!-- FLOW 2: LOGIN -->
+  <div class="sec-head">
+    <span class="sec-num">FLOW 02</span>
+    <h2>Login & Token Issuance</h2>
+  </div>
+
+  <div class="seq-svg-wrap">
+    <svg viewBox="0 0 900 380" style="width:100%;min-width:600px;font-family:'IBM Plex Mono',monospace;">
+      <!-- Headers -->
+      <rect x="30"  y="20" width="120" height="34" rx="3" fill="#e8eef8"  stroke="#9ab4d8"  stroke-width="1.5"/>
+      <text x="90"  y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#1a4f8a">CLIENT</text>
+      <rect x="240" y="20" width="140" height="34" rx="3" fill="#fff3e0"  stroke="#e8c48a"  stroke-width="1.5"/>
+      <text x="310" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#c4700a">INGRESS</text>
+      <rect x="470" y="20" width="140" height="34" rx="3" fill="#e4f2ef"  stroke="#8abfb8"  stroke-width="1.5"/>
+      <text x="540" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#0a6b5c">AUTH-SVC</text>
+      <rect x="700" y="20" width="130" height="34" rx="3" fill="#fceaea"  stroke="#e8a8a8"  stroke-width="1.5"/>
+      <text x="765" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#b83232">REDIS</text>
+
+      <!-- Lifelines -->
+      <line x1="90"  y1="54" x2="90"  y2="370" stroke="#9ab4d8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="310" y1="54" x2="310" y2="370" stroke="#e8c48a" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="540" y1="54" x2="540" y2="370" stroke="#8abfb8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="765" y1="54" x2="765" y2="370" stroke="#e8a8a8" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+      <!-- 1. POST /auth/login -->
+      <line x1="90" y1="90" x2="304" y2="90" stroke="#1a4f8a" stroke-width="1.5"/>
+      <polygon points="304,85 314,90 304,95" fill="#1a4f8a"/>
+      <rect x="130" y="74" width="140" height="16" fill="#f5f2ec"/>
+      <text x="200" y="86" text-anchor="middle" font-size="10" fill="#1a4f8a">POST /auth/login</text>
+
+      <!-- 2. forward -->
+      <line x1="316" y1="110" x2="534" y2="110" stroke="#c4700a" stroke-width="1.5"/>
+      <polygon points="534,105 544,110 534,115" fill="#c4700a"/>
+
+      <!-- 3. lookup + bcrypt verify -->
+      <rect x="520" y="120" width="40" height="28" rx="2" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1"/>
+      <text x="540" y="133" text-anchor="middle" font-size="9" fill="#0a6b5c">lookup</text>
+      <text x="540" y="144" text-anchor="middle" font-size="9" fill="#0a6b5c">bcrypt✓</text>
+
+      <!-- 4. Check ACTIVE status -->
+      <rect x="490" y="155" width="100" height="22" rx="2" fill="#fff3e0" stroke="#e8c48a" stroke-width="1"/>
+      <text x="540" y="170" text-anchor="middle" font-size="9" fill="#c4700a">check ACTIVE status</text>
+
+      <!-- 5. Sign JWT (RS256) -->
+      <rect x="490" y="185" width="100" height="22" rx="2" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1"/>
+      <text x="540" y="200" text-anchor="middle" font-size="9" fill="#0a6b5c">sign AT (RS256, 15m)</text>
+
+      <!-- 6. Generate RT + store hash -->
+      <line x1="544" y1="218" x2="759" y2="218" stroke="#0a6b5c" stroke-width="1.5"/>
+      <polygon points="759,213 769,218 759,223" fill="#0a6b5c"/>
+      <rect x="580" y="203" width="140" height="16" fill="#f5f2ec"/>
+      <text x="650" y="215" text-anchor="middle" font-size="10" fill="#0a6b5c">store RT hash (7d TTL)</text>
+
+      <!-- 7. Redis ack -->
+      <line x1="759" y1="238" x2="550" y2="238" stroke="#b83232" stroke-width="1" stroke-dasharray="3,3"/>
+      <polygon points="550,233 540,238 550,243" fill="#b83232"/>
+
+      <!-- 8. 200 + Set-Cookie -->
+      <line x1="534" y1="268" x2="316" y2="268" stroke="#0a6b5c" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="316,263 306,268 316,273" fill="#0a6b5c"/>
+      <rect x="345" y="252" width="160" height="16" fill="#f5f2ec"/>
+      <text x="425" y="264" text-anchor="middle" font-size="10" fill="#0a6b5c">200 + Set-Cookie: RT</text>
+
+      <!-- 9. forward to client -->
+      <line x1="304" y1="295" x2="96" y2="295" stroke="#c4700a" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="96,290 86,295 96,300" fill="#c4700a"/>
+      <rect x="115" y="280" width="170" height="16" fill="#f5f2ec"/>
+      <text x="200" y="292" text-anchor="middle" font-size="10" fill="#c4700a">{ accessToken, expiresIn }</text>
+
+      <!-- Note boxes -->
+      <rect x="30" y="316" width="220" height="22" rx="2" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1"/>
+      <text x="140" y="332" text-anchor="middle" font-size="10" fill="#0a6b5c">AT stored in memory (SPA only)</text>
+      <rect x="265" y="316" width="260" height="22" rx="2" fill="#fceaea" stroke="#e8a8a8" stroke-width="1"/>
+      <text x="395" y="332" text-anchor="middle" font-size="10" fill="#b83232">RT: HttpOnly Secure SameSite=Strict</text>
+
+      <!-- Step numbers -->
+      <circle cx="90"  cy="90"  r="8" fill="#1a4f8a"/><text x="90"  y="94"  text-anchor="middle" font-size="9" fill="white" font-weight="600">1</text>
+      <circle cx="310" cy="110" r="8" fill="#c4700a"/><text x="310" y="114" text-anchor="middle" font-size="9" fill="white" font-weight="600">2</text>
+      <circle cx="540" cy="218" r="8" fill="#0a6b5c"/><text x="540" y="222" text-anchor="middle" font-size="9" fill="white" font-weight="600">3</text>
+      <circle cx="540" cy="268" r="8" fill="#0a6b5c"/><text x="540" y="272" text-anchor="middle" font-size="9" fill="white" font-weight="600">4</text>
+    </svg>
+  </div>
+
+  <!-- FLOW 3: API REQUEST -->
+  <div class="sec-head">
+    <span class="sec-num">FLOW 03</span>
+    <h2>Authenticated API Request (JWT Validation)</h2>
+  </div>
+
+  <div class="seq-svg-wrap">
+    <svg viewBox="0 0 960 360" style="width:100%;min-width:640px;font-family:'IBM Plex Mono',monospace;">
+      <!-- Headers -->
+      <rect x="20"  y="20" width="110" height="34" rx="3" fill="#e8eef8"  stroke="#9ab4d8"  stroke-width="1.5"/>
+      <text x="75"  y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#1a4f8a">CLIENT</text>
+      <rect x="210" y="20" width="130" height="34" rx="3" fill="#fff3e0"  stroke="#e8c48a"  stroke-width="1.5"/>
+      <text x="275" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#c4700a">INGRESS</text>
+      <rect x="420" y="20" width="140" height="34" rx="3" fill="#fceaea"  stroke="#e8a8a8"  stroke-width="1.5"/>
+      <text x="490" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#b83232">JWT FILTER</text>
+      <rect x="640" y="20" width="120" height="34" rx="3" fill="#fceaea"  stroke="#e8a8a8"  stroke-width="1.5"/>
+      <text x="700" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#b83232">REDIS</text>
+      <rect x="830" y="20" width="110" height="34" rx="3" fill="#f0eaf8"  stroke="#c4a8e0"  stroke-width="1.5"/>
+      <text x="885" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#5c2d8a">SERVICE</text>
+
+      <!-- Lifelines -->
+      <line x1="75"  y1="54" x2="75"  y2="350" stroke="#9ab4d8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="275" y1="54" x2="275" y2="350" stroke="#e8c48a" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="490" y1="54" x2="490" y2="350" stroke="#e8a8a8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="700" y1="54" x2="700" y2="350" stroke="#e8a8a8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="885" y1="54" x2="885" y2="350" stroke="#c4a8e0" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+      <!-- 1. Request + Bearer -->
+      <line x1="75" y1="88" x2="269" y2="88" stroke="#1a4f8a" stroke-width="1.5"/>
+      <polygon points="269,83 279,88 269,93" fill="#1a4f8a"/>
+      <text x="172" y="83" text-anchor="middle" font-size="10" fill="#1a4f8a">GET /orders + Bearer AT</text>
+
+      <!-- 2. route to filter -->
+      <line x1="281" y1="108" x2="484" y2="108" stroke="#c4700a" stroke-width="1.5"/>
+      <polygon points="484,103 494,108 484,113" fill="#c4700a"/>
+
+      <!-- 3. Verify RS256 sig (JWKS cached) -->
+      <rect x="465" y="118" width="50" height="22" rx="2" fill="#fceaea" stroke="#e8a8a8" stroke-width="1"/>
+      <text x="490" y="126" text-anchor="middle" font-size="9" fill="#b83232">verify</text>
+      <text x="490" y="136" text-anchor="middle" font-size="9" fill="#b83232">RS256 sig</text>
+
+      <!-- 4. Check exp/iss/aud -->
+      <rect x="455" y="148" width="70" height="22" rx="2" fill="#fceaea" stroke="#e8a8a8" stroke-width="1"/>
+      <text x="490" y="162" text-anchor="middle" font-size="9" fill="#b83232">exp/iss/aud claims</text>
+
+      <!-- 5. Check jti blocklist in Redis -->
+      <line x1="496" y1="184" x2="694" y2="184" stroke="#b83232" stroke-width="1.5"/>
+      <polygon points="694,179 704,184 694,189" fill="#b83232"/>
+      <text x="595" y="179" text-anchor="middle" font-size="10" fill="#b83232">GET jti:blocklist</text>
+
+      <!-- 6. Redis: not blocked -->
+      <line x1="694" y1="200" x2="502" y2="200" stroke="#b83232" stroke-width="1" stroke-dasharray="3,3"/>
+      <polygon points="502,195 492,200 502,205" fill="#b83232"/>
+      <text x="595" y="196" text-anchor="middle" font-size="10" fill="#b83232">nil (not blocked)</text>
+
+      <!-- 7. Populate SecurityContext -->
+      <rect x="455" y="210" width="70" height="22" rx="2" fill="#eaf4eb" stroke="#9ecfa1" stroke-width="1"/>
+      <text x="490" y="224" text-anchor="middle" font-size="9" fill="#276b2a">populate SecurityContext</text>
+
+      <!-- 8. forward to service -->
+      <line x1="496" y1="248" x2="879" y2="248" stroke="#5c2d8a" stroke-width="1.5"/>
+      <polygon points="879,243 889,248 879,253" fill="#5c2d8a"/>
+      <text x="690" y="243" text-anchor="middle" font-size="10" fill="#5c2d8a">@PreAuthorize check → execute</text>
+
+      <!-- 9. response -->
+      <line x1="879" y1="275" x2="497" y2="275" stroke="#5c2d8a" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="497,270 487,275 497,280" fill="#5c2d8a"/>
+
+      <!-- 10. 200 back to client -->
+      <line x1="484" y1="300" x2="81" y2="300" stroke="#b83232" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="81,295 71,300 81,305" fill="#b83232"/>
+      <text x="278" y="295" text-anchor="middle" font-size="10" fill="#b83232">200 response</text>
+
+      <!-- FAIL PATH note -->
+      <rect x="20" y="318" width="300" height="22" rx="2" fill="#fceaea" stroke="#e8a8a8" stroke-width="1"/>
+      <text x="170" y="334" text-anchor="middle" font-size="10" fill="#b83232">❌ Any check fails → 401 Unauthorized immediately</text>
+      <rect x="335" y="318" width="280" height="22" rx="2" fill="#f0eaf8" stroke="#c4a8e0" stroke-width="1"/>
+      <text x="475" y="334" text-anchor="middle" font-size="10" fill="#5c2d8a">❌ Role check fails → 403 Forbidden</text>
+
+      <!-- Step numbers -->
+      <circle cx="75"  cy="88"  r="8" fill="#1a4f8a"/><text x="75"  y="92"  text-anchor="middle" font-size="9" fill="white" font-weight="600">1</text>
+      <circle cx="490" cy="184" r="8" fill="#b83232"/><text x="490" y="188" text-anchor="middle" font-size="9" fill="white" font-weight="600">2</text>
+      <circle cx="490" cy="248" r="8" fill="#5c2d8a"/><text x="490" y="252" text-anchor="middle" font-size="9" fill="white" font-weight="600">3</text>
+    </svg>
+  </div>
+
+  <!-- FLOW 4: TOKEN REFRESH -->
+  <div class="sec-head">
+    <span class="sec-num">FLOW 04</span>
+    <h2>Token Refresh</h2>
+  </div>
+
+  <div class="seq-svg-wrap">
+    <svg viewBox="0 0 900 320" style="width:100%;min-width:600px;font-family:'IBM Plex Mono',monospace;">
+      <rect x="30"  y="20" width="120" height="34" rx="3" fill="#e8eef8" stroke="#9ab4d8" stroke-width="1.5"/>
+      <text x="90"  y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#1a4f8a">CLIENT</text>
+      <rect x="240" y="20" width="140" height="34" rx="3" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1.5"/>
+      <text x="310" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#0a6b5c">AUTH-SVC</text>
+      <rect x="470" y="20" width="140" height="34" rx="3" fill="#fceaea" stroke="#e8a8a8" stroke-width="1.5"/>
+      <text x="540" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#b83232">REDIS / DB</text>
+
+      <line x1="90"  y1="54" x2="90"  y2="310" stroke="#9ab4d8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="310" y1="54" x2="310" y2="310" stroke="#8abfb8" stroke-width="1.5" stroke-dasharray="4,4"/>
+      <line x1="540" y1="54" x2="540" y2="310" stroke="#e8a8a8" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+      <!-- Note: RT in cookie automatically sent -->
+      <rect x="30" y="64" width="200" height="18" rx="2" fill="#fff3e0" stroke="#e8c48a" stroke-width="1"/>
+      <text x="130" y="77" text-anchor="middle" font-size="9" fill="#c4700a">Browser auto-sends RT cookie</text>
+
+      <!-- 1. POST /auth/refresh (AT expired) -->
+      <line x1="90" y1="95" x2="304" y2="95" stroke="#1a4f8a" stroke-width="1.5"/>
+      <polygon points="304,90 314,95 304,100" fill="#1a4f8a"/>
+      <text x="197" y="89" text-anchor="middle" font-size="10" fill="#1a4f8a">POST /auth/refresh</text>
+
+      <!-- 2. SHA-256 hash RT cookie, lookup DB -->
+      <line x1="316" y1="120" x2="534" y2="120" stroke="#0a6b5c" stroke-width="1.5"/>
+      <polygon points="534,115 544,120 534,125" fill="#0a6b5c"/>
+      <text x="425" y="115" text-anchor="middle" font-size="10" fill="#0a6b5c">lookup hash, check expiry+revoked</text>
+
+      <!-- 3. DB ok -->
+      <line x1="534" y1="142" x2="322" y2="142" stroke="#b83232" stroke-width="1" stroke-dasharray="3,3"/>
+      <polygon points="322,137 312,142 322,147" fill="#b83232"/>
+      <text x="425" y="137" text-anchor="middle" font-size="10" fill="#b83232">valid — not revoked</text>
+
+      <!-- 4. Rotate RT (delete old, create new) -->
+      <line x1="316" y1="168" x2="534" y2="168" stroke="#0a6b5c" stroke-width="1.5"/>
+      <polygon points="534,163 544,168 534,173" fill="#0a6b5c"/>
+      <text x="425" y="163" text-anchor="middle" font-size="10" fill="#0a6b5c">rotate: revoke old, store new hash</text>
+
+      <!-- 5. Issue new AT (RS256) -->
+      <rect x="285" y="178" width="50" height="22" rx="2" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1"/>
+      <text x="310" y="192" text-anchor="middle" font-size="9" fill="#0a6b5c">sign new AT</text>
+
+      <!-- 6. 200 + new Set-Cookie -->
+      <line x1="304" y1="220" x2="96" y2="220" stroke="#0a6b5c" stroke-width="1" stroke-dasharray="4,3"/>
+      <polygon points="96,215 86,220 96,225" fill="#0a6b5c"/>
+      <text x="197" y="214" text-anchor="middle" font-size="10" fill="#0a6b5c">200 + new AT + Set-Cookie (new RT)</text>
+
+      <!-- RT rotation note -->
+      <rect x="235" y="238" width="310" height="32" rx="2" fill="#e4f2ef" stroke="#8abfb8" stroke-width="1"/>
+      <text x="390" y="254" text-anchor="middle" font-size="10" fill="#0a6b5c" font-weight="600">RT Rotation — old token revoked immediately.</text>
+      <text x="390" y="266" text-anchor="middle" font-size="10" fill="#0a6b5c">Reuse of old RT triggers full revocation (theft detection)</text>
+
+      <circle cx="90"  cy="95"  r="8" fill="#1a4f8a"/><text x="90"  y="99"  text-anchor="middle" font-size="9" fill="white" font-weight="600">1</text>
+      <circle cx="310" cy="120" r="8" fill="#0a6b5c"/><text x="310" y="124" text-anchor="middle" font-size="9" fill="white" font-weight="600">2</text>
+      <circle cx="310" cy="168" r="8" fill="#0a6b5c"/><text x="310" y="172" text-anchor="middle" font-size="9" fill="white" font-weight="600">3</text>
+      <circle cx="310" cy="220" r="8" fill="#0a6b5c"/><text x="310" y="224" text-anchor="middle" font-size="9" fill="white" font-weight="600">4</text>
+    </svg>
+  </div>
+
+  <!-- STEP-BY-STEP TABLE -->
+  <hr class="sec-div">
+  <div class="sec-head">
+    <span class="sec-num">DETAIL</span>
+    <h2>Login Flow — Step-by-Step</h2>
+  </div>
+  <div style="background:var(--surface);border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <table class="steps-table">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Action</th>
+          <th>Actor</th>
+          <th>Detail / Security Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill pill-blue">1</span></td>
+          <td>Client POSTs credentials</td>
+          <td>Client → Ingress</td>
+          <td>HTTPS only. Body: <code>{ email, password }</code>. Rate-limited: 10 attempts/15 min per IP via Bucket4j.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-amber">2</span></td>
+          <td>Lookup credentials record</td>
+          <td>auth-service</td>
+          <td>Query <code>credentials</code> table by email. Return generic 401 if not found — no user enumeration.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-amber">3</span></td>
+          <td>Verify password hash</td>
+          <td>auth-service</td>
+          <td><code>BCrypt.verify(password, storedHash)</code> with cost=12. Constant-time comparison prevents timing attacks.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-amber">4</span></td>
+          <td>Check account status</td>
+          <td>auth-service</td>
+          <td>If <code>INACTIVE</code> → 423. If <code>LOCKED</code> (brute-force) → 423 with lockout expiry in response.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-teal">5</span></td>
+          <td>Sign Access Token (RS256)</td>
+          <td>auth-service</td>
+          <td>Claims: <code>sub, iss, aud, iat, exp (+15min), jti (UUIDv7), myapp/roles, myapp/accountStatus</code>. Private key from GCP Secret Manager.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-red">6</span></td>
+          <td>Generate Refresh Token</td>
+          <td>auth-service → Redis/DB</td>
+          <td>Opaque 256-bit random UUID. Store <code>SHA-256(token)</code> in DB with userId, deviceHint, expiresAt. Never store raw token.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-teal">7</span></td>
+          <td>Return tokens</td>
+          <td>auth-service → Client</td>
+          <td>AT in JSON body. RT as <code>Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Strict; Path=/auth/refresh</code></td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-violet">8</span></td>
+          <td>Client stores AT in memory</td>
+          <td>Client (SPA)</td>
+          <td>Never <code>localStorage</code> or <code>sessionStorage</code>. Memory only. RT cookie is inaccessible to JS.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════ PANEL: TOKEN ANATOMY ═════════════════════ -->
+<div class="panel" id="panel-token">
+
+  <p class="page-title">Token Anatomy</p>
+  <p class="page-sub">What lives inside the JWT — and what never should</p>
+
+  <div class="sec-head">
+    <span class="sec-num">ACCESS TOKEN</span>
+    <h2>JWT Structure (RS256 — asymmetric)</h2>
+  </div>
+
+  <div class="token-anatomy" style="margin-bottom:24px;">
+    <div class="token-header">JWT = Header . Payload . Signature &nbsp;|&nbsp; Algorithm: RS256 &nbsp;|&nbsp; TTL: 15 minutes</div>
+    <div class="token-parts">
+      <div class="token-part">
+        <div class="token-part-title" style="color:var(--blue)">Header</div>
+        <div class="token-field"><span class="tf-key">alg</span><span class="tf-val str">"RS256"</span></div>
+        <div class="token-field"><span class="tf-key">typ</span><span class="tf-val str">"JWT"</span></div>
+        <div class="token-field"><span class="tf-key">kid</span><span class="tf-val str">"key-2024-01"</span></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6;">
+          <code>kid</code> identifies which public key in JWKS to use for verification. Enables key rotation without service restart.
+        </div>
+      </div>
+      <div class="token-part">
+        <div class="token-part-title" style="color:var(--teal)">Standard Claims (Payload)</div>
+        <div class="token-field"><span class="tf-key">sub</span><span class="tf-val str">"usr_01J8KXY..."</span></div>
+        <div class="token-field"><span class="tf-key">iss</span><span class="tf-val str">"https://auth.myapp.io"</span></div>
+        <div class="token-field"><span class="tf-key">aud</span><span class="tf-val str">"myapp-api"</span></div>
+        <div class="token-field"><span class="tf-key">iat</span><span class="tf-val num">1700000000</span></div>
+        <div class="token-field"><span class="tf-key">exp</span><span class="tf-val num">1700000900</span></div>
+        <div class="token-field"><span class="tf-key">jti</span><span class="tf-val str">"tok_01J9ABC..."</span></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6;">
+          <code>jti</code> is the unique token ID — added to Redis blocklist on logout or role change for immediate revocation.
+        </div>
+      </div>
+      <div class="token-part">
+        <div class="token-part-title" style="color:var(--amber)">Custom Claims (namespaced)</div>
+        <div class="token-field"><span class="tf-key">myapp/roles</span><span class="tf-val arr">["ROLE_CUSTOMER"]</span></div>
+        <div class="token-field"><span class="tf-key">myapp/status</span><span class="tf-val cust">"ACTIVE"</span></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6;">
+          Custom claims are namespaced with <code>myapp/</code> to prevent collision with standard registries.
+        </div>
+        <div style="margin-top:10px;padding:10px;background:var(--red-bg);border:1px solid var(--red-b);border-radius:3px;font-size:11px;color:var(--red);line-height:1.6;">
+          <strong>NEVER in JWT:</strong><br/>
+          email, name, phone, address, payment info, passwords, session data, or any PII. JWT payload is base64 — not encrypted.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:32px;">
+    <div>
+      <div class="sec-head" style="margin-top:0;">
+        <span class="sec-num">REFRESH TOKEN</span>
+        <h2>Opaque Token Design</h2>
+      </div>
+      <div style="background:var(--surface);border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+        <table class="steps-table">
+          <thead><tr><th>Property</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Format</td><td><code>256-bit cryptographically random UUID</code></td></tr>
+            <tr><td>Storage (client)</td><td><code>HttpOnly Secure SameSite=Strict cookie</code></td></tr>
+            <tr><td>Storage (server)</td><td><code>SHA-256 hash only — never raw token</code></td></tr>
+            <tr><td>TTL</td><td>7 days</td></tr>
+            <tr><td>Rotation</td><td>Every use — old token revoked on refresh</td></tr>
+            <tr><td>Reuse detection</td><td>Old RT reused → revoke ALL tokens for user</td></tr>
+            <tr><td>Scope</td><td><code>Path=/auth/refresh</code> — never sent to other endpoints</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="sec-head" style="margin-top:0;">
+        <span class="sec-num">KEY MANAGEMENT</span>
+        <h2>RS256 Key Rotation</h2>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <h4>Private Key</h4>
+        <p>Stored exclusively in GCP Secret Manager. Injected into auth-service pod at startup via K8s secret. Never committed to source control. Rotation: new key pair created, old <code>kid</code> retained in JWKS until all tokens with that <code>kid</code> expire (≤ 15 min).</p>
+      </div>
+      <div class="card">
+        <h4>Public JWKS Endpoint</h4>
+        <p><code>GET /auth/.well-known/jwks.json</code> — public, unauthenticated. All downstream services cache JWKS locally (TTL = 1 hour). Cache-Control headers set accordingly. On key rotation, downstream services auto-refresh when signature verification fails with cached key.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-head">
+    <span class="sec-num">COMPARISON</span>
+    <h2>Access Token vs Refresh Token</h2>
+  </div>
+  <div style="background:var(--surface);border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <table class="steps-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Access Token (AT)</th>
+          <th>Refresh Token (RT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Format</td><td><span class="pill pill-blue">JWT (signed)</span></td><td><span class="pill pill-gray">opaque random bytes</span></td></tr>
+        <tr><td>TTL</td><td>15 minutes</td><td>7 days</td></tr>
+        <tr><td>Client storage</td><td>JS memory (SPA)</td><td>HttpOnly cookie</td></tr>
+        <tr><td>Sent to</td><td>Every API endpoint</td><td><code>/auth/refresh</code> only</td></tr>
+        <tr><td>Server-side state?</td><td>Stateless (self-contained)</td><td>Stateful (DB record)</td></tr>
+        <tr><td>Revocable instantly?</td><td>Via jti blocklist (Redis)</td><td>Yes — delete DB record</td></tr>
+        <tr><td>Validated by</td><td>Any service (JWKS)</td><td>auth-service only</td></tr>
+        <tr><td>Rotation</td><td>Re-issued on every refresh</td><td>Rotated on every use</td></tr>
+        <tr><td>XSS exposure</td><td>Yes (in memory) — short TTL limits blast radius</td><td>No (HttpOnly)</td></tr>
+        <tr><td>CSRF exposure</td><td>No (Authorization header)</td><td>Mitigated by SameSite=Strict</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PANEL: RBAC MATRIX ═══════════════════════ -->
+<div class="panel" id="panel-rbac">
+
+  <p class="page-title">RBAC Permission Matrix</p>
+  <p class="page-sub">Role-Based Access Control across all services and resources</p>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-sym allow">✅</span> Full Access</div>
+    <div class="legend-item"><span class="legend-sym deny">❌</span> Denied</div>
+    <div class="legend-item"><span class="ro legend-sym">R</span> Read Only</div>
+    <div class="legend-item"><span class="rw legend-sym">R/W</span> Read + Write</div>
+    <div class="legend-item"><span class="own legend-sym">OWN</span> Own records only</div>
+    <div class="legend-item"><span class="cond legend-sym">COND</span> Conditional</div>
+  </div>
+
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Resource / Operation</th>
+          <th class="col-customer">ROLE_CUSTOMER</th>
+          <th class="col-support">ROLE_SUPPORT</th>
+          <th class="col-admin">ROLE_ADMIN</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- AUTH SERVICE -->
+        <tr class="group-row"><td colspan="4">🔐 Auth Service</td></tr>
+        <tr>
+          <td>POST /auth/register</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>POST /auth/login</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>POST /auth/refresh</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>POST /auth/logout</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>GET /auth/.well-known/jwks.json</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+
+        <!-- IDENTITY SERVICE — PROFILE -->
+        <tr class="group-row"><td colspan="4">👤 Identity Service — Self-Service Profile</td></tr>
+        <tr>
+          <td>GET /users/me</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>PUT /users/me (edit own profile)</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>GET /users/me/addresses</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>POST/PUT/DELETE /users/me/addresses</td>
+          <td class="col-customer"><span class="allow">✅</span></td>
+          <td class="col-support"><span class="allow">✅</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+
+        <!-- IDENTITY SERVICE — ADMIN -->
+        <tr class="group-row"><td colspan="4">🛡 Identity Service — Admin User Management</td></tr>
+        <tr>
+          <td>GET /admin/users (list all)</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="ro">R</span></td>
+          <td class="col-admin"><span class="rw">R/W</span></td>
+        </tr>
+        <tr>
+          <td>POST /admin/users (create user)</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>GET /admin/users/{userId}</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="ro">R</span></td>
+          <td class="col-admin"><span class="rw">R/W</span></td>
+        </tr>
+        <tr>
+          <td>PATCH /admin/users/{userId} (edit)</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+        <tr>
+          <td>GET /admin/users/{userId}/roles</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="ro">R</span></td>
+          <td class="col-admin"><span class="rw">R/W</span></td>
+        </tr>
+        <tr>
+          <td>PUT /admin/users/{userId}/roles (assign)</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="cond">COND*</span></td>
+        </tr>
+        <tr>
+          <td>POST /admin/users/{userId}/deactivate</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="cond">COND**</span></td>
+        </tr>
+        <tr>
+          <td>POST /admin/users/{userId}/activate</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="allow">✅</span></td>
+        </tr>
+
+        <!-- PRODUCT SERVICE -->
+        <tr class="group-row"><td colspan="4">📦 Product Service</td></tr>
+        <tr>
+          <td>GET /products (list + filter)</td>
+          <td class="col-customer"><span class="ro">R</span></td>
+          <td class="col-support"><span class="ro">R</span></td>
+          <td class="col-admin"><span class="rw">R/W</span></td>
+        </tr>
+        <tr>
+          <td>GET /products/{sku} (detail)</td>
+          <td class="col-customer"><span class="ro">R</span></td>
+          <td class="col-support"><span class="ro">R</span></td>
+          <td class="col-admin"><span class="rw">R/W</span></td>
+        </tr>
+        <tr>
+          <td>POST /internal/products/stock/reserve</td>
+          <td class="col-customer"><span class="deny">❌</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="deny">❌</span></td>
+        </tr>
+        <tr>
+          <td style="padding-left:36px;font-size:11px;color:var(--muted);">↳ (svc-to-svc only — ROLE_SERVICE jwt)</td>
+          <td class="col-customer">—</td>
+          <td class="col-support">—</td>
+          <td class="col-admin">—</td>
+        </tr>
+
+        <!-- ORDER SERVICE -->
+        <tr class="group-row"><td colspan="4">🛒 Order Service</td></tr>
+        <tr>
+          <td>POST /orders (create)</td>
+          <td class="col-customer"><span class="own">OWN</span></td>
+          <td class="col-support"><span class="deny">❌</span></td>
+          <td class="col-admin"><span class="deny">❌</span></td>
+        </tr>
+        <tr>
+          <td>GET /orders (history)</td>
+          <td class="col-customer"><span class="own">OWN</span></td>
+          <td class="col-support"><span class="ro">R (all)</span></td>
+          <td class="col-admin"><span class="rw">R/W (all)</span></td>
+        </tr>
+        <tr>
+          <td>GET /orders/{orderId} (detail)</td>
+          <td class="col-customer"><span class="own">OWN only</span></td>
+          <td class="col-support"><span class="ro">R (any)</span></td>
+          <td class="col-admin"><span class="rw">R/W (any)</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-2" style="margin-top:20px;">
+    <div class="alert alert-warn">
+      <strong>*COND — Role Assignment:</strong> An ADMIN cannot remove their own <code>ROLE_ADMIN</code>. Prevents lockout. Checked server-side: if <code>targetUserId == requesterId</code> and <code>ROLE_ADMIN</code> not in new roles array → 409.
+    </div>
+    <div class="alert alert-warn">
+      <strong>**COND — Deactivation:</strong> An ADMIN cannot deactivate their own account. Checked server-side: if <code>targetUserId == requesterId</code> → 409 "Cannot deactivate your own account."
+    </div>
+  </div>
+
+  <hr class="sec-div">
+
+  <div class="sec-head">
+    <span class="sec-num">SPRING IMPL</span>
+    <h2>@PreAuthorize Annotations</h2>
+  </div>
+  <div style="background:#f0ebe3;border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">Java — Method Security</div>
+    <pre style="padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;overflow-x:auto;color:#2d2a26;"><span style="color:#b83232">// SCRUM-10: Role enforcement on endpoints</span>
+
+<span style="color:#0a6b5c">// Admin-only — simple role check</span>
+<span style="color:#5c2d8a">@PreAuthorize</span>(<span style="color:#276b2a">"hasRole('ADMIN')"</span>)
+<span style="color:#1a4f8a">public</span> UserDetail <span style="color:#c4700a">adminGetUser</span>(String userId) { ... }
+
+<span style="color:#0a6b5c">// Admin or Support — multiple roles</span>
+<span style="color:#5c2d8a">@PreAuthorize</span>(<span style="color:#276b2a">"hasAnyRole('ADMIN', 'SUPPORT')"</span>)
+<span style="color:#1a4f8a">public</span> Page&lt;UserSummary&gt; <span style="color:#c4700a">listUsers</span>(Pageable p) { ... }
+
+<span style="color:#0a6b5c">// SCRUM-22: Role-aware order access — own or admin/support</span>
+<span style="color:#5c2d8a">@PreAuthorize</span>(<span style="color:#276b2a">"hasAnyRole('ADMIN','SUPPORT') or</span>
+<span style="color:#276b2a">              @orderAccessPolicy.isOwner(authentication, #orderId)"</span>)
+<span style="color:#1a4f8a">public</span> OrderDetail <span style="color:#c4700a">getOrderDetail</span>(String orderId) { ... }
+
+<span style="color:#0a6b5c">// SCRUM-14: Deactivation — cannot self-deactivate</span>
+<span style="color:#5c2d8a">@PreAuthorize</span>(<span style="color:#276b2a">"hasRole('ADMIN') and</span>
+<span style="color:#276b2a">              #targetUserId != authentication.name"</span>)
+<span style="color:#1a4f8a">public</span> AccountStatusResponse <span style="color:#c4700a">deactivateUser</span>(String targetUserId) { ... }
+
+<span style="color:#0a6b5c">// SCRUM-11: Role assignment — cannot self-demote from ADMIN</span>
+<span style="color:#5c2d8a">@PreAuthorize</span>(<span style="color:#276b2a">"hasRole('ADMIN')"</span>)
+<span style="color:#5c2d8a">@PostAuthorize</span>(<span style="color:#276b2a">"@rolePolicy.validateSelfDemotion(authentication, #targetUserId, #req)"</span>)
+<span style="color:#1a4f8a">public</span> UserRolesResponse <span style="color:#c4700a">replaceRoles</span>(String targetUserId, ReplaceRolesRequest req) { ... }
+
+<span style="color:#0a6b5c">// Custom policy bean — order ownership check</span>
+<span style="color:#5c2d8a">@Component</span>(<span style="color:#276b2a">"orderAccessPolicy"</span>)
+<span style="color:#1a4f8a">public class</span> OrderAccessPolicy {
+    <span style="color:#1a4f8a">public boolean</span> <span style="color:#c4700a">isOwner</span>(Authentication auth, String orderId) {
+        <span style="color:#1a4f8a">var</span> order = orderRepository.findById(orderId).orElseThrow();
+        <span style="color:#1a4f8a">return</span> order.getCustomerId().equals(auth.getName()); <span style="color:#b83232">// sub == userId</span>
+    }
+}</pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PANEL: REVOCATION ════════════════════════ -->
+<div class="panel" id="panel-revocation">
+
+  <p class="page-title">Token Revocation<br>& Invalidation</p>
+  <p class="page-sub">Handling logout, role changes, and account deactivation immediately</p>
+
+  <div class="grid-2">
+
+    <div>
+      <div class="sec-head" style="margin-top:0;">
+        <span class="sec-num">FLOW A</span>
+        <h2>Logout</h2>
+      </div>
+      <div class="rev-flow">
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--blue-b);color:var(--blue);">1</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Client → POST /auth/logout</div>
+            <div class="rev-desc">Sends Bearer AT in Authorization header. RT cookie sent automatically by browser to <code>Path=/auth/refresh</code>. Both are processed.</div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--red-b);color:var(--red);">2</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Add jti to Redis blocklist</div>
+            <div class="rev-desc">Extract <code>jti</code> and <code>exp</code> from AT. <code>SET jti:{jti} 1 EX {exp - now}</code> — TTL matches AT remaining lifetime. No permanent storage needed.</div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--red-b);color:var(--red);">3</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Revoke Refresh Token</div>
+            <div class="rev-desc">SHA-256 hash the RT from cookie. <code>UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = ?</code></div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--teal-b);color:var(--teal);">4</div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Clear cookie + return 204</div>
+            <div class="rev-desc"><code>Set-Cookie: refresh_token=; Max-Age=0; HttpOnly; Secure</code> to clear the cookie on the client side.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-head" style="margin-top:0;">
+        <span class="sec-num">FLOW B</span>
+        <h2>Role Change / Deactivation</h2>
+      </div>
+      <div class="rev-flow">
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--violet-b);color:var(--violet);">1</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Admin calls PATCH /admin/users/{id}/roles</div>
+            <div class="rev-desc">identity-service updates the <code>user_roles</code> table and records the change in audit log.</div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--amber-b);color:var(--amber);">2</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">identity-service → auth-service (sync call)</div>
+            <div class="rev-desc"><code>POST /internal/revoke-user/{userId}</code> — internal endpoint, ROLE_SERVICE only. auth-service queries all active <code>refresh_tokens</code> for this userId.</div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--red-b);color:var(--red);">3</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Bulk revoke all refresh tokens</div>
+            <div class="rev-desc"><code>UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = ? AND revoked_at IS NULL</code></div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--red-b);color:var(--red);">4</div>
+            <div class="rev-line"></div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">Add jti pattern to Redis blocklist</div>
+            <div class="rev-desc">Store <code>SET user-block:{userId} 1 EX 900</code> (15 min = max AT TTL). JwtFilter checks this key by <code>sub</code> claim — any AT for this user is rejected within milliseconds.</div>
+          </div>
+        </div>
+        <div class="rev-step">
+          <div class="rev-icon-wrap">
+            <div class="rev-icon" style="border-color:var(--teal-b);color:var(--teal);">5</div>
+          </div>
+          <div class="rev-content">
+            <div class="rev-title">User forced to re-login</div>
+            <div class="rev-desc">Next API call returns 401. RT is revoked so refresh fails too. User must authenticate fresh — new AT will contain updated roles.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="sec-div">
+
+  <div class="sec-head">
+    <span class="sec-num">EDGE CASES</span>
+    <h2>Refresh Token Reuse Detection (Token Theft)</h2>
+  </div>
+  <div class="alert alert-warn" style="margin-bottom:16px;">
+    <strong>Attack scenario:</strong> An attacker steals a RT (e.g. via network interception). Both the attacker and the legitimate client hold the same RT. The first to use it causes the other to be detected as a potential thief.
+  </div>
+  <div style="background:var(--surface);border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <table class="steps-table">
+      <thead><tr><th>Event</th><th>System Response</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Legitimate user uses RT → gets new RT</td>
+          <td>Old RT marked <code>revoked_at = NOW()</code>, new RT issued</td>
+          <td>Normal flow</td>
+        </tr>
+        <tr>
+          <td>Attacker presents old (revoked) RT</td>
+          <td>RT found in DB but <code>revoked_at IS NOT NULL</code></td>
+          <td><strong>Reuse detected</strong></td>
+        </tr>
+        <tr>
+          <td>Reuse detected</td>
+          <td>Revoke ALL refresh tokens for this userId immediately</td>
+          <td>Both sessions invalidated — user must re-login</td>
+        </tr>
+        <tr>
+          <td>User contacts support</td>
+          <td>Admin sees reuse event in audit log with timestamps</td>
+          <td>Potential breach investigation triggered</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="sec-div">
+
+  <div class="sec-head">
+    <span class="sec-num">REDIS KEYS</span>
+    <h2>Blocklist Key Schema</h2>
+  </div>
+  <div style="background:#f0ebe3;border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <pre style="padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2;overflow-x:auto;color:#2d2a26;"><span style="color:#b83232"># Individual token revocation (logout)</span>
+SET jti:tok_01J9ABC...   "1"   EX 900       <span style="color:#8c7f74"># TTL = remaining AT lifetime (max 900s)</span>
+
+<span style="color:#b83232"># User-level block (role change / deactivation)</span>
+SET user-block:usr_01J8K... "1"  EX 900    <span style="color:#8c7f74"># blocks ALL tokens for this userId</span>
+
+<span style="color:#0a6b5c"># JwtFilter check order (fail-fast):</span>
+<span style="color:#1a4f8a">1.</span> Verify RS256 signature           → fail → 401
+<span style="color:#1a4f8a">2.</span> Check exp / iss / aud claims      → fail → 401
+<span style="color:#1a4f8a">3.</span> GET user-block:{sub}              → exists → 401
+<span style="color:#1a4f8a">4.</span> GET jti:{jti}                     → exists → 401
+<span style="color:#1a4f8a">5.</span> Populate SecurityContext          → proceed
+<span style="color:#1a4f8a">6.</span> @PreAuthorize role check           → fail → 403</pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PANEL: IMPLEMENTATION ════════════════════ -->
+<div class="panel" id="panel-impl">
+
+  <p class="page-title">Implementation<br>Reference</p>
+  <p class="page-sub">Spring Boot 3.x — key classes, config, and patterns</p>
+
+  <div class="sec-head" style="margin-top:0;">
+    <span class="sec-num">SPRING SECURITY</span>
+    <h2>SecurityFilterChain + JwtFilter</h2>
+  </div>
+
+  <div style="background:#f0ebe3;border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;margin-bottom:24px;">
+    <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">SecurityConfig.java</div>
+    <pre style="padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;overflow-x:auto;color:#2d2a26;"><span style="color:#5c2d8a">@Configuration</span>
+<span style="color:#5c2d8a">@EnableMethodSecurity</span>(prePostEnabled = <span style="color:#b83232">true</span>)
+<span style="color:#1a4f8a">public class</span> SecurityConfig {
+
+  <span style="color:#5c2d8a">@Bean</span>
+  <span style="color:#1a4f8a">public</span> SecurityFilterChain <span style="color:#c4700a">filterChain</span>(HttpSecurity http,
+                                           JtiBlocklistFilter jtiFilter) <span style="color:#1a4f8a">throws</span> Exception {
+    <span style="color:#1a4f8a">return</span> http
+      .csrf(AbstractHttpConfigurer::disable)            <span style="color:#8c7f74">// stateless REST API</span>
+      .sessionManagement(s -> s
+        .sessionCreationPolicy(STATELESS))
+      .authorizeHttpRequests(auth -> auth
+        .requestMatchers(
+          <span style="color:#276b2a">"/auth/**"</span>,
+          <span style="color:#276b2a">"/products/**"</span>,
+          <span style="color:#276b2a">"/actuator/health"</span>
+        ).permitAll()
+        .requestMatchers(<span style="color:#276b2a">"/admin/**"</span>).hasAnyRole(<span style="color:#276b2a">"ADMIN"</span>, <span style="color:#276b2a">"SUPPORT"</span>)
+        .requestMatchers(<span style="color:#276b2a">"/internal/**"</span>).hasRole(<span style="color:#276b2a">"SERVICE"</span>)   <span style="color:#8c7f74">// svc-to-svc</span>
+        .anyRequest().authenticated())
+      .oauth2ResourceServer(rs -> rs
+        .jwt(jwt -> jwt
+          .jwkSetUri(<span style="color:#276b2a">"${auth.jwks-uri}"</span>)               <span style="color:#8c7f74">// 12-factor: env var</span>
+          .jwtAuthenticationConverter(jwtConverter())))
+      .addFilterBefore(jtiFilter, BearerTokenAuthenticationFilter.class)
+      .exceptionHandling(ex -> ex
+        .authenticationEntryPoint(problemDetailEntryPoint())
+        .accessDeniedHandler(problemDetailAccessDeniedHandler()))
+      .build();
+  }
+
+  <span style="color:#5c2d8a">@Bean</span>
+  <span style="color:#1a4f8a">public</span> JwtAuthenticationConverter <span style="color:#c4700a">jwtConverter</span>() {
+    <span style="color:#1a4f8a">var</span> converter = <span style="color:#1a4f8a">new</span> JwtAuthenticationConverter();
+    <span style="color:#1a4f8a">var</span> rolesConverter = <span style="color:#1a4f8a">new</span> JwtGrantedAuthoritiesConverter();
+    rolesConverter.setAuthoritiesClaimName(<span style="color:#276b2a">"myapp/roles"</span>);
+    rolesConverter.setAuthorityPrefix(<span style="color:#276b2a">""</span>);                <span style="color:#8c7f74">// roles already prefixed ROLE_</span>
+    converter.setJwtGrantedAuthoritiesConverter(rolesConverter);
+    <span style="color:#1a4f8a">return</span> converter;
+  }
+}</pre>
+  </div>
+
+  <div style="background:#f0ebe3;border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;margin-bottom:24px;">
+    <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">JtiBlocklistFilter.java</div>
+    <pre style="padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;overflow-x:auto;color:#2d2a26;"><span style="color:#5c2d8a">@Component</span>
+<span style="color:#1a4f8a">public class</span> JtiBlocklistFilter <span style="color:#1a4f8a">extends</span> OncePerRequestFilter {
+
+  <span style="color:#1a4f8a">private final</span> RedisTemplate&lt;String, String&gt; redis;
+
+  <span style="color:#5c2d8a">@Override</span>
+  <span style="color:#1a4f8a">protected void</span> <span style="color:#c4700a">doFilterInternal</span>(HttpServletRequest req,
+                                      HttpServletResponse res,
+                                      FilterChain chain) <span style="color:#1a4f8a">throws</span> ... {
+    <span style="color:#1a4f8a">var</span> token = extractBearerToken(req);
+    <span style="color:#1a4f8a">if</span> (token != null) {
+      <span style="color:#1a4f8a">var</span> jwt = parseJwtUnsafe(token);                    <span style="color:#8c7f74">// parse without verify (done by Spring)</span>
+      <span style="color:#1a4f8a">var</span> sub = jwt.getClaimAsString(<span style="color:#276b2a">"sub"</span>);
+      <span style="color:#1a4f8a">var</span> jti = jwt.getClaimAsString(<span style="color:#276b2a">"jti"</span>);
+
+      <span style="color:#8c7f74">// Check user-level block first (role change / deactivation)</span>
+      <span style="color:#1a4f8a">if</span> (Boolean.TRUE.equals(redis.hasKey(<span style="color:#276b2a">"user-block:"</span> + sub))) {
+        <span style="color:#c4700a">sendUnauthorized</span>(res, <span style="color:#276b2a">"Session invalidated"</span>);
+        <span style="color:#1a4f8a">return</span>;
+      }
+
+      <span style="color:#8c7f74">// Check individual token revocation (logout)</span>
+      <span style="color:#1a4f8a">if</span> (Boolean.TRUE.equals(redis.hasKey(<span style="color:#276b2a">"jti:"</span> + jti))) {
+        <span style="color:#c4700a">sendUnauthorized</span>(res, <span style="color:#276b2a">"Token has been revoked"</span>);
+        <span style="color:#1a4f8a">return</span>;
+      }
+    }
+    chain.doFilter(req, res);
+  }
+}</pre>
+  </div>
+
+  <div class="sec-head">
+    <span class="sec-num">TOKEN ISSUANCE</span>
+    <h2>Signing Access Tokens</h2>
+  </div>
+  <div style="background:#f0ebe3;border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;margin-bottom:24px;">
+    <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">TokenService.java</div>
+    <pre style="padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;overflow-x:auto;color:#2d2a26;"><span style="color:#5c2d8a">@Service</span>
+<span style="color:#1a4f8a">public class</span> TokenService {
+
+  <span style="color:#1a4f8a">private final</span> RSAPrivateKey privateKey;   <span style="color:#8c7f74">// injected from GCP Secret Manager</span>
+  <span style="color:#1a4f8a">private final</span> String keyId;               <span style="color:#8c7f74">// for JWKS kid rotation</span>
+  <span style="color:#1a4f8a">private final</span> Duration accessTokenTtl = Duration.ofMinutes(15);
+
+  <span style="color:#1a4f8a">public</span> String <span style="color:#c4700a">issueAccessToken</span>(UserCredential cred, List&lt;String&gt; roles) {
+    <span style="color:#1a4f8a">var</span> now = Instant.now();
+    <span style="color:#1a4f8a">return</span> Jwts.builder()
+      .header().keyId(keyId).and()
+      .subject(cred.getUserId())
+      .issuer(<span style="color:#276b2a">"https://auth.myapp.io"</span>)
+      .audience().add(<span style="color:#276b2a">"myapp-api"</span>).and()
+      .issuedAt(Date.from(now))
+      .expiration(Date.from(now.plus(accessTokenTtl)))
+      .id(UlidCreator.getMonotonicUlid().toString())    <span style="color:#8c7f74">// jti = sortable unique ID</span>
+      .claim(<span style="color:#276b2a">"myapp/roles"</span>, roles)
+      .claim(<span style="color:#276b2a">"myapp/status"</span>, cred.getStatus().name())
+      .signWith(privateKey, Jwts.SIG.RS256)
+      .compact();
+  }
+
+  <span style="color:#1a4f8a">public</span> String <span style="color:#c4700a">issueRefreshToken</span>(String userId, String deviceHint) {
+    <span style="color:#1a4f8a">var</span> rawToken = generateSecureToken();              <span style="color:#8c7f74">// 256-bit random</span>
+    <span style="color:#1a4f8a">var</span> tokenHash = sha256Hex(rawToken);
+    refreshTokenRepository.save(RefreshToken.builder()
+      .userId(userId)
+      .tokenHash(tokenHash)
+      .deviceHint(truncate(deviceHint, 100))
+      .expiresAt(Instant.now().plus(Duration.ofDays(7)))
+      .build());
+    <span style="color:#1a4f8a">return</span> rawToken;                                  <span style="color:#8c7f74">// only time raw token is visible</span>
+  }
+}</pre>
+  </div>
+
+  <div class="sec-head">
+    <span class="sec-num">CONFIG</span>
+    <h2>application.yml — 12-Factor Config</h2>
+  </div>
+  <div style="background:#f0ebe3;border:1.5px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">auth-service/src/main/resources/application.yml</div>
+    <pre style="padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;overflow-x:auto;color:#2d2a26;"><span style="color:#1a4f8a">spring</span>:
+  <span style="color:#1a4f8a">datasource</span>:
+    <span style="color:#1a4f8a">url</span>: <span style="color:#276b2a">${AUTH_DATASOURCE_URL}</span>          <span style="color:#8c7f74"># K8s Secret</span>
+    <span style="color:#1a4f8a">username</span>: <span style="color:#276b2a">${AUTH_DB_USER}</span>
+    <span style="color:#1a4f8a">password</span>: <span style="color:#276b2a">${AUTH_DB_PASSWORD}</span>
+  <span style="color:#1a4f8a">data</span>:
+    <span style="color:#1a4f8a">redis</span>:
+      <span style="color:#1a4f8a">url</span>: <span style="color:#276b2a">${REDIS_URL}</span>
+
+<span style="color:#1a4f8a">auth</span>:
+  <span style="color:#1a4f8a">jwt</span>:
+    <span style="color:#1a4f8a">private-key-secret-name</span>: <span style="color:#276b2a">${JWT_PRIVATE_KEY_SECRET}</span>   <span style="color:#8c7f74"># GCP Secret Manager ref</span>
+    <span style="color:#1a4f8a">key-id</span>: <span style="color:#276b2a">${JWT_KEY_ID:key-2024-01}</span>
+    <span style="color:#1a4f8a">issuer</span>: <span style="color:#276b2a">${JWT_ISSUER:https://auth.myapp.io}</span>
+    <span style="color:#1a4f8a">audience</span>: <span style="color:#276b2a">${JWT_AUDIENCE:myapp-api}</span>
+    <span style="color:#1a4f8a">access-token-ttl-minutes</span>: <span style="color:#c4700a">15</span>
+    <span style="color:#1a4f8a">refresh-token-ttl-days</span>: <span style="color:#c4700a">7</span>
+  <span style="color:#1a4f8a">rate-limit</span>:
+    <span style="color:#1a4f8a">login-attempts-per-window</span>: <span style="color:#c4700a">10</span>
+    <span style="color:#1a4f8a">window-minutes</span>: <span style="color:#c4700a">15</span>
+    <span style="color:#1a4f8a">lockout-minutes</span>: <span style="color:#c4700a">30</span>
+
+<span style="color:#8c7f74"># Downstream services validate JWT using this endpoint</span>
+<span style="color:#8c7f74"># jwks-uri: exposed as GET /auth/.well-known/jwks.json (public)</span>
+<span style="color:#1a4f8a">spring</span>:
+  <span style="color:#1a4f8a">security</span>:
+    <span style="color:#1a4f8a">oauth2</span>:
+      <span style="color:#1a4f8a">resourceserver</span>:
+        <span style="color:#1a4f8a">jwt</span>:
+          <span style="color:#1a4f8a">jwk-set-uri</span>: <span style="color:#276b2a">${AUTH_JWKS_URI:http://auth-service/auth/.well-known/jwks.json}</span></pre>
+  </div>
+
+</div>
+
+<script>
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

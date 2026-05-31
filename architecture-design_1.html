@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud-Native Microservices Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2f4a;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    padding: 80px 60px 60px;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; right: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+  }
+  .hero-badge::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 4vw, 56px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+  .tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* NAV */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,12,20,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 60px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-item {
+    padding: 14px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .nav-item:hover, .nav-item.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* LAYOUT */
+  .container { max-width: 1400px; margin: 0 auto; padding: 60px; }
+
+  /* SECTION */
+  .section { margin-bottom: 80px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+  .section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* CARDS */
+  .grid { display: grid; gap: 20px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: rgba(0,212,255,0.3); transform: translateY(-1px); }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card.auth::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .card.user::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .card.product::before { background: linear-gradient(90deg, var(--green), transparent); }
+  .card.order::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .card.infra::before { background: linear-gradient(90deg, var(--yellow), transparent); }
+
+  .card-icon {
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+  .card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .card p { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+
+  .service-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-bottom: 10px;
+  }
+  .tag-auth { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .tag-user { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+  .tag-product { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+  .tag-order { background: rgba(255,107,53,0.1); color: var(--accent2); border: 1px solid rgba(255,107,53,0.2); }
+  .tag-infra { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+  .tag-shared { background: rgba(100,116,139,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: #060a10;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-lang {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .code-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-yaml { background: var(--yellow); }
+  .dot-java { background: var(--accent2); }
+  .dot-sql { background: var(--green); }
+  .dot-mermaid { background: var(--accent); }
+  .code-body {
+    padding: 20px;
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+    color: #c9d1d9;
+  }
+
+  /* SYNTAX HIGHLIGHT */
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cm { color: #8b949e; font-style: italic; }
+  .nm { color: #e3b341; }
+  .fn { color: #d2a8ff; }
+  .tp { color: #79c0ff; }
+  .op { color: #f0883e; }
+  .ky { color: #00d4ff; }
+
+  /* RISK BOXES */
+  .risk-box {
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .risk-high { background: rgba(239,68,68,0.08); border-color: var(--red); }
+  .risk-med { background: rgba(245,158,11,0.08); border-color: var(--yellow); }
+  .risk-low { background: rgba(16,185,129,0.08); border-color: var(--green); }
+  .risk-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .risk-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .risk-desc { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+  .risk-fix { font-size: 12px; color: var(--text-dim); margin-top: 8px; font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 3px; display: inline-block; }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .flow-node {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .flow-arrow {
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+  .flow-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 0 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .data-table td {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    vertical-align: top;
+  }
+  .data-table tr:hover td { background: var(--surface2); }
+  .data-table code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(0,212,255,0.06);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* SCRUM TICKET */
+  .ticket {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+  .ticket-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .ticket h4 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .ticket p { font-size: 13px; color: var(--text-dim); }
+  .ticket-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* BADGE */
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .badge-get { color: #61affe; border-color: #61affe; background: rgba(97,175,254,0.08); }
+  .badge-post { color: #49cc90; border-color: #49cc90; background: rgba(73,204,144,0.08); }
+  .badge-put { color: #fca130; border-color: #fca130; background: rgba(252,161,48,0.08); }
+  .badge-delete { color: #f93e3e; border-color: #f93e3e; background: rgba(249,62,62,0.08); }
+  .badge-patch { color: #50e3c2; border-color: #50e3c2; background: rgba(80,227,194,0.08); }
+
+  /* ENDPOINT LIST */
+  .endpoint {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .endpoint:last-child { border-bottom: none; }
+  .endpoint-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    flex: 1;
+  }
+  .endpoint-desc { color: var(--text-muted); font-size: 12px; }
+  .endpoint-auth { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  .auth-pub { color: var(--green); }
+  .auth-jwt { color: var(--accent); }
+  .auth-admin { color: var(--accent2); }
+
+  /* MERMAID-STYLE TEXT DIAGRAM */
+  .diagram {
+    background: #060a10;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  /* SCROLL TO TOP */
+  .scroll-top {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    width: 40px; height: 40px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    z-index: 200;
+  }
+  .scroll-top:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  /* CALLOUT */
+  .callout {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 8px;
+    padding: 18px 22px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .callout strong { color: var(--accent); }
+
+  /* ARCH DIAGRAM */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    position: relative;
+  }
+  .arch-layer {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .arch-layer-label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--surface);
+    padding: 0 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .arch-services {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .arch-svc {
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .svc-auth { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.3); color: var(--accent); }
+  .svc-user { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.3); color: #a78bfa; }
+  .svc-product { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); color: var(--green); }
+  .svc-order { background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.3); color: var(--accent2); }
+  .svc-gw { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: var(--yellow); }
+  .svc-db { background: rgba(100,116,139,0.08); border-color: rgba(100,116,139,0.3); color: var(--text-dim); }
+
+  @media(max-width: 900px) {
+    .hero, .container { padding: 30px 20px; }
+    .nav { padding: 0 20px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">PRINCIPAL ARCHITECTURE REVIEW — SPRINT SCRUM-6 THROUGH SCRUM-25</div>
+  <h1>Cloud-Native<br><span>Microservices</span> Architecture</h1>
+  <p class="hero-sub">Complete solution architecture across Authentication, Identity, Product Catalog, Order Management, and Platform Infrastructure — aligned to 12-factor principles, GKE deployment, and zero-trust security posture.</p>
+  <div class="tech-pills">
+    <span class="pill">Java 17</span>
+    <span class="pill">Spring Boot 3.x</span>
+    <span class="pill">Spring Security</span>
+    <span class="pill">JPA/Hibernate</span>
+    <span class="pill">PostgreSQL</span>
+    <span class="pill">React 18 TypeScript</span>
+    <span class="pill">Docker</span>
+    <span class="pill">Kubernetes GKE</span>
+    <span class="pill">REST/OpenAPI 3.0</span>
+    <span class="pill">JWT/RBAC</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-item active" href="#boundaries">Service Boundaries</a>
+  <a class="nav-item" href="#auth">Auth Service</a>
+  <a class="nav-item" href="#identity">Identity Service</a>
+  <a class="nav-item" href="#product">Product Service</a>
+  <a class="nav-item" href="#order">Order Service</a>
+  <a class="nav-item" href="#security">Security Design</a>
+  <a class="nav-item" href="#data">Data Models</a>
+  <a class="nav-item" href="#contracts">API Contracts</a>
+  <a class="nav-item" href="#comms">Inter-Service Comms</a>
+  <a class="nav-item" href="#infra">Infra / DevOps</a>
+  <a class="nav-item" href="#risks">Risks & Anti-Patterns</a>
+  <a class="nav-item" href="#nfr">NFR</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════ SERVICE BOUNDARIES ═══ -->
+<section class="section" id="boundaries">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Service Boundary Analysis</h2>
+  </div>
+
+  <div class="callout">
+    <strong>Design Decision:</strong> Tickets SCRUM-6 through SCRUM-25 decompose into <strong>4 bounded contexts</strong> plus shared infrastructure. Each service owns its schema, has independent deployability, and communicates exclusively through well-defined contracts. No shared database — ever.
+  </div>
+
+  <!-- Architecture Diagram -->
+  <div class="arch-diagram" style="margin-bottom: 32px;">
+    <div class="arch-layer" style="border-color: rgba(245,158,11,0.3);">
+      <span class="arch-layer-label">Client Tier</span>
+      <div class="arch-services">
+        <div class="arch-svc svc-gw">React 18 SPA (TypeScript)</div>
+        <div class="arch-svc svc-gw">Mobile Client</div>
+      </div>
+    </div>
+    <div style="text-align:center; color: var(--text-muted); font-family: 'JetBrains Mono',monospace; font-size: 12px; margin: 6px 0;">│ HTTPS │</div>
+    <div class="arch-layer" style="border-color: rgba(245,158,11,0.4);">
+      <span class="arch-layer-label">API Gateway / Ingress</span>
+      <div class="arch-services">
+        <div class="arch-svc svc-gw">GKE Ingress + Cloud Armor</div>
+        <div class="arch-svc svc-gw">JWT Validation Filter (Shared Lib)</div>
+        <div class="arch-svc svc-gw">Rate Limiting</div>
+      </div>
+    </div>
+    <div style="text-align:center; color: var(--text-muted); font-family: 'JetBrains Mono',monospace; font-size: 12px; margin: 6px 0;">│ Internal mTLS │</div>
+    <div class="arch-layer" style="border-color: rgba(0,212,255,0.3);">
+      <span class="arch-layer-label">Application Services</span>
+      <div class="arch-services">
+        <div class="arch-svc svc-auth">auth-service</div>
+        <div class="arch-svc svc-user">identity-service</div>
+        <div class="arch-svc svc-product">product-service</div>
+        <div class="arch-svc svc-order">order-service</div>
+      </div>
+    </div>
+    <div style="text-align:center; color: var(--text-muted); font-family: 'JetBrains Mono',monospace; font-size: 12px; margin: 6px 0;">│ JDBC / Internal │</div>
+    <div class="arch-layer" style="border-color: rgba(100,116,139,0.3);">
+      <span class="arch-layer-label">Data Tier (Schema-per-service)</span>
+      <div class="arch-services">
+        <div class="arch-svc svc-db">auth_db (PG)</div>
+        <div class="arch-svc svc-db">identity_db (PG)</div>
+        <div class="arch-svc svc-db">product_db (PG)</div>
+        <div class="arch-svc svc-db">order_db (PG)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-4">
+    <div class="card auth">
+      <span class="service-tag tag-auth">auth-service</span>
+      <div class="card-icon">🔐</div>
+      <h3>Auth Service</h3>
+      <p>Owns credentials, token issuance, refresh token lifecycle, logout/revocation. Single responsibility: <em>who are you?</em> No business logic.</p>
+      <div style="margin-top:14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">
+        SCRUM-6,7,8,9
+      </div>
+    </div>
+    <div class="card user">
+      <span class="service-tag tag-user">identity-service</span>
+      <div class="card-icon">👤</div>
+      <h3>Identity Service</h3>
+      <p>Owns user profiles, roles, account lifecycle (activate/deactivate), admin management. Answers: <em>what can you do?</em></p>
+      <div style="margin-top:14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">
+        SCRUM-10,11,12,13,14,15
+      </div>
+    </div>
+    <div class="card product">
+      <span class="service-tag tag-product">product-service</span>
+      <div class="card-icon">📦</div>
+      <h3>Product Service</h3>
+      <p>Owns catalog, SKUs, stock levels, pricing, filters. Read-heavy, cacheable. Exposes stock reservation API consumed by order-service.</p>
+      <div style="margin-top:14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">
+        SCRUM-16,17,19
+      </div>
+    </div>
+    <div class="card order">
+      <span class="service-tag tag-order">order-service</span>
+      <div class="card-icon">🛒</div>
+      <h3>Order Service</h3>
+      <p>Owns order lifecycle, server-side total calculation, history, role-aware views. Orchestrates stock validation before persisting order.</p>
+      <div style="margin-top:14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">
+        SCRUM-18,19,20,21,22
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h3 style="font-family:'Syne',sans-serif; font-size:18px; margin-bottom:20px;">Ticket → Service Mapping</h3>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Ticket</th>
+          <th>Title</th>
+          <th>Service</th>
+          <th>Layer</th>
+          <th>Priority Concern</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>SCRUM-6</code></td><td>Customer Registration</td><td><span class="service-tag tag-auth" style="margin:0">auth-service</span></td><td>Write API</td><td>Password hashing, duplicate check</td></tr>
+        <tr><td><code>SCRUM-7</code></td><td>Login & JWT Issuance</td><td><span class="service-tag tag-auth" style="margin:0">auth-service</span></td><td>Write API</td><td>Credential validation, short-lived AT</td></tr>
+        <tr><td><code>SCRUM-8</code></td><td>Refresh Token & Logout</td><td><span class="service-tag tag-auth" style="margin:0">auth-service</span></td><td>Write API</td><td>RT rotation, revocation store</td></tr>
+        <tr><td><code>SCRUM-9</code></td><td>JWT Validation Middleware</td><td><span class="service-tag tag-shared" style="margin:0">shared-lib</span></td><td>Cross-cutting</td><td>Stateless validation, key rotation</td></tr>
+        <tr><td><code>SCRUM-10</code></td><td>Role Enforcement</td><td><span class="service-tag tag-shared" style="margin:0">shared-lib</span></td><td>Cross-cutting</td><td>@PreAuthorize, method security</td></tr>
+        <tr><td><code>SCRUM-11</code></td><td>Role Update Propagation</td><td><span class="service-tag tag-user" style="margin:0">identity-service</span></td><td>Event</td><td>⚠ Stale JWT window — see Risks</td></tr>
+        <tr><td><code>SCRUM-12</code></td><td>Admin Create User & Role</td><td><span class="service-tag tag-user" style="margin:0">identity-service</span></td><td>Admin API</td><td>RBAC: ROLE_ADMIN only</td></tr>
+        <tr><td><code>SCRUM-13</code></td><td>Admin View & Edit Users</td><td><span class="service-tag tag-user" style="margin:0">identity-service</span></td><td>Admin API</td><td>Audit logging mandatory</td></tr>
+        <tr><td><code>SCRUM-14</code></td><td>Deactivate Account</td><td><span class="service-tag tag-user" style="margin:0">identity-service</span></td><td>Admin API</td><td>Soft delete + RT revocation</td></tr>
+        <tr><td><code>SCRUM-15</code></td><td>Customer Profile Mgmt</td><td><span class="service-tag tag-user" style="margin:0">identity-service</span></td><td>Write/Read API</td><td>Self-service, own data only</td></tr>
+        <tr><td><code>SCRUM-16</code></td><td>Product Catalog List/Filter</td><td><span class="service-tag tag-product" style="margin:0">product-service</span></td><td>Read API</td><td>Pagination, index-backed filters</td></tr>
+        <tr><td><code>SCRUM-17</code></td><td>Product Detail Endpoint</td><td><span class="service-tag tag-product" style="margin:0">product-service</span></td><td>Read API</td><td>Cache-aside, ETag support</td></tr>
+        <tr><td><code>SCRUM-18</code></td><td>Create Order</td><td><span class="service-tag tag-order" style="margin:0">order-service</span></td><td>Write API</td><td>Idempotency key required</td></tr>
+        <tr><td><code>SCRUM-19</code></td><td>Stock Validation</td><td><span class="service-tag tag-order" style="margin:0">order-service</span> → <span class="service-tag tag-product" style="margin:0">product-service</span></td><td>Sync REST</td><td>Reserve then confirm pattern</td></tr>
+        <tr><td><code>SCRUM-20</code></td><td>Server-Side Total Calc</td><td><span class="service-tag tag-order" style="margin:0">order-service</span></td><td>Domain Logic</td><td>Never trust client price</td></tr>
+        <tr><td><code>SCRUM-21</code></td><td>Order History</td><td><span class="service-tag tag-order" style="margin:0">order-service</span></td><td>Read API</td><td>Cursor-based pagination</td></tr>
+        <tr><td><code>SCRUM-22</code></td><td>Order Detail (Role-Aware)</td><td><span class="service-tag tag-order" style="margin:0">order-service</span></td><td>Read API</td><td>CUSTOMER sees own; ADMIN sees all</td></tr>
+        <tr><td><code>SCRUM-23</code></td><td>Containerise Services</td><td><span class="service-tag tag-infra" style="margin:0">platform</span></td><td>Infra</td><td>Distroless images, non-root</td></tr>
+        <tr><td><code>SCRUM-24</code></td><td>K8s Manifests & GKE</td><td><span class="service-tag tag-infra" style="margin:0">platform</span></td><td>Infra</td><td>HPA, PodDisruptionBudget</td></tr>
+        <tr><td><code>SCRUM-25</code></td><td>CI/CD + Auto Rollback</td><td><span class="service-tag tag-infra" style="margin:0">platform</span></td><td>Infra</td><td>Blue/Green, health gate</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ AUTH SERVICE ═══ -->
+<section class="section" id="auth">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>Auth Service — SCRUM-6,7,8,9</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Endpoints</h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;">
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/auth/register</span>
+          <span class="auth-pub endpoint-auth">public</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/auth/login</span>
+          <span class="auth-pub endpoint-auth">public</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/auth/refresh</span>
+          <span class="auth-pub endpoint-auth">public + RT cookie</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/auth/logout</span>
+          <span class="auth-jwt endpoint-auth">JWT</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/auth/.well-known/jwks.json</span>
+          <span class="auth-pub endpoint-auth">public</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Token Strategy</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Token</th><th>Type</th><th>TTL</th><th>Storage</th></tr></thead>
+          <tbody>
+            <tr><td>Access Token</td><td><code>JWT (RS256)</code></td><td>15 min</td><td>Memory (SPA)</td></tr>
+            <tr><td>Refresh Token</td><td><code>opaque UUID</code></td><td>7 days</td><td>HttpOnly Secure Cookie</td></tr>
+            <tr><td>RT record</td><td><code>DB row</code></td><td>7 days</td><td>auth_db.refresh_tokens</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout" style="margin-top:16px;">
+        <strong>RS256 (asymmetric):</strong> Private key on auth-service only. All other services validate using public JWKS endpoint. Key rotation via GCP Secret Manager without restart.
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang"><span class="code-dot dot-yaml"></span>OpenAPI 3.0 — Auth Service (excerpt)</span>
+    </div>
+    <div class="code-body"><span class="kw">paths</span><span class="op">:</span>
+  <span class="kw">/auth/register</span><span class="op">:</span>
+    <span class="kw">post</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">Register new customer</span>
+      <span class="kw">operationId</span><span class="op">:</span> <span class="fn">registerCustomer</span>
+      <span class="kw">requestBody</span><span class="op">:</span>
+        <span class="kw">required</span><span class="op">:</span> <span class="nm">true</span>
+        <span class="kw">content</span><span class="op">:</span>
+          <span class="kw">application/json</span><span class="op">:</span>
+            <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">$ref</span><span class="op">:</span> <span class="str">'#/components/schemas/RegisterRequest'</span><span class="op">}</span>
+      <span class="kw">responses</span><span class="op">:</span>
+        <span class="str">'201'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Created — returns userId, no tokens issued yet</span>
+          <span class="kw">content</span><span class="op">:</span>
+            <span class="kw">application/json</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">$ref</span><span class="op">:</span> <span class="str">'#/components/schemas/RegisterResponse'</span><span class="op">}</span>
+        <span class="str">'409'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Email already registered</span>
+        <span class="str">'422'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Validation failure</span>
+
+  <span class="kw">/auth/login</span><span class="op">:</span>
+    <span class="kw">post</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">Authenticate and issue tokens</span>
+      <span class="kw">operationId</span><span class="op">:</span> <span class="fn">login</span>
+      <span class="kw">requestBody</span><span class="op">:</span>
+        <span class="kw">required</span><span class="op">:</span> <span class="nm">true</span>
+        <span class="kw">content</span><span class="op">:</span>
+          <span class="kw">application/json</span><span class="op">:</span>
+            <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">$ref</span><span class="op">:</span> <span class="str">'#/components/schemas/LoginRequest'</span><span class="op">}</span>
+      <span class="kw">responses</span><span class="op">:</span>
+        <span class="str">'200'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Access token in body; Refresh token in HttpOnly cookie</span>
+          <span class="kw">headers</span><span class="op">:</span>
+            <span class="kw">Set-Cookie</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span>
+                <span class="kw">type</span><span class="op">:</span> <span class="str">string</span>
+                <span class="kw">example</span><span class="op">:</span> <span class="str">"refresh_token=...; HttpOnly; Secure; SameSite=Strict; Path=/auth/refresh"</span>
+          <span class="kw">content</span><span class="op">:</span>
+            <span class="kw">application/json</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">$ref</span><span class="op">:</span> <span class="str">'#/components/schemas/TokenResponse'</span><span class="op">}</span>
+        <span class="str">'401'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Invalid credentials</span>
+        <span class="str">'423'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Account deactivated</span>
+
+<span class="kw">components</span><span class="op">:</span>
+  <span class="kw">schemas</span><span class="op">:</span>
+    <span class="kw">RegisterRequest</span><span class="op">:</span>
+      <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+      <span class="kw">required</span><span class="op">:</span> <span class="op">[</span><span class="str">email</span><span class="op">,</span> <span class="str">password</span><span class="op">,</span> <span class="str">firstName</span><span class="op">,</span> <span class="str">lastName</span><span class="op">]</span>
+      <span class="kw">properties</span><span class="op">:</span>
+        <span class="kw">email</span><span class="op">:</span>
+          <span class="kw">type</span><span class="op">:</span> <span class="str">string</span>
+          <span class="kw">format</span><span class="op">:</span> <span class="str">email</span>
+        <span class="kw">password</span><span class="op">:</span>
+          <span class="kw">type</span><span class="op">:</span> <span class="str">string</span>
+          <span class="kw">minLength</span><span class="op">:</span> <span class="nm">10</span>
+          <span class="kw">pattern</span><span class="op">:</span> <span class="str">'(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])'</span>
+          <span class="kw">writeOnly</span><span class="op">:</span> <span class="nm">true</span>
+        <span class="kw">firstName</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">maxLength</span><span class="op">:</span> <span class="nm">100</span><span class="op">}</span>
+        <span class="kw">lastName</span><span class="op">:</span>  <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">maxLength</span><span class="op">:</span> <span class="nm">100</span><span class="op">}</span>
+
+    <span class="kw">TokenResponse</span><span class="op">:</span>
+      <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+      <span class="kw">properties</span><span class="op">:</span>
+        <span class="kw">accessToken</span><span class="op">:</span>  <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">}</span>
+        <span class="kw">tokenType</span><span class="op">:</span>    <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">enum</span><span class="op">:</span> <span class="op">[</span><span class="str">Bearer</span><span class="op">]}</span>
+        <span class="kw">expiresIn</span><span class="op">:</span>    <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">integer</span><span class="op">,</span> <span class="kw">description</span><span class="op">:</span> <span class="str">seconds</span><span class="op">}</span>
+</div>
+  </div>
+
+  <hr class="divider">
+
+  <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">JWT Payload Design</h3>
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-java"></span>JWT Claims (Standard + Custom)</span></div>
+    <div class="code-body"><span class="cm">// Standard claims</span>
+<span class="str">"sub"</span><span class="op">:</span> <span class="str">"usr_01J8K..."</span>,          <span class="cm">// userId (UUID v7)</span>
+<span class="str">"iss"</span><span class="op">:</span> <span class="str">"https://auth.myapp.io"</span>,
+<span class="str">"aud"</span><span class="op">:</span> <span class="str">"myapp-api"</span>,
+<span class="str">"iat"</span><span class="op">:</span> <span class="nm">1700000000</span>,
+<span class="str">"exp"</span><span class="op">:</span> <span class="nm">1700000900</span>,            <span class="cm">// iat + 15 min</span>
+<span class="str">"jti"</span><span class="op">:</span> <span class="str">"tok_01J8L..."</span>,           <span class="cm">// unique token id for blocklist</span>
+
+<span class="cm">// Custom claims (namespace-prefixed to avoid collision)</span>
+<span class="str">"myapp/roles"</span><span class="op">:</span> <span class="op">[</span><span class="str">"ROLE_CUSTOMER"</span><span class="op">]</span>,
+<span class="str">"myapp/accountStatus"</span><span class="op">:</span> <span class="str">"ACTIVE"</span>,
+
+<span class="cm">// NOTE: NO PII in JWT (no email, name, address)</span>
+<span class="cm">// Downstream services call identity-service for profile data</span>
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ IDENTITY SERVICE ═══ -->
+<section class="section" id="identity">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Identity Service — SCRUM-10 through 15</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Endpoints</h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;">
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/users/me</span>
+          <span class="auth-jwt endpoint-auth">CUSTOMER</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-put">PUT</span>
+          <span class="endpoint-path">/users/me</span>
+          <span class="auth-jwt endpoint-auth">CUSTOMER</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/admin/users</span>
+          <span class="auth-admin endpoint-auth">ADMIN</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/admin/users</span>
+          <span class="auth-admin endpoint-auth">ADMIN</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-patch">PATCH</span>
+          <span class="endpoint-path">/admin/users/{id}</span>
+          <span class="auth-admin endpoint-auth">ADMIN</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-patch">PATCH</span>
+          <span class="endpoint-path">/admin/users/{id}/roles</span>
+          <span class="auth-admin endpoint-auth">ADMIN</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-delete">DELETE</span>
+          <span class="endpoint-path">/admin/users/{id}/activate</span>
+          <span class="auth-admin endpoint-auth">ADMIN (soft deactivate)</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Role Update Propagation — SCRUM-11</h3>
+      <div class="risk-box risk-med">
+        <div class="risk-icon">⚠️</div>
+        <div>
+          <div class="risk-title">Stale JWT Window After Role Change</div>
+          <div class="risk-desc">JWT has 15-min TTL. A role removed via admin won't take effect until the current AT expires. During that window the user retains elevated access.</div>
+          <div class="risk-fix">Mitigation: Short AT TTL (15 min) + JWT blocklist (jti in Redis) for immediate revocation on sensitive role downgrades. On role update, signal auth-service to invalidate all tokens for userId.</div>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>Inter-service call:</strong> When <code>PATCH /admin/users/{id}/roles</code> is called, identity-service POSTs to <code>auth-service/internal/revoke-user</code> with the userId. Auth-service adds all active JTIs for that user to a Redis blocklist (TTL = max AT TTL = 15 min).
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>OpenAPI 3.0 — Identity Service (excerpt)</span></div>
+    <div class="code-body"><span class="kw">paths</span><span class="op">:</span>
+  <span class="kw">/admin/users</span><span class="op">:</span>
+    <span class="kw">get</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">Paginated list of all users</span>
+      <span class="kw">security</span><span class="op">:</span>
+        <span class="op">-</span> <span class="kw">BearerAuth</span><span class="op">:</span> <span class="op">[]</span>
+      <span class="kw">x-required-role</span><span class="op">:</span> <span class="str">ROLE_ADMIN</span>
+      <span class="kw">parameters</span><span class="op">:</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">page</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">integer</span><span class="op">,</span> <span class="kw">default</span><span class="op">:</span> <span class="nm">0</span><span class="op">}</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">size</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">integer</span><span class="op">,</span> <span class="kw">default</span><span class="op">:</span> <span class="nm">20</span><span class="op">,</span> <span class="kw">maximum</span><span class="op">:</span> <span class="nm">100</span><span class="op">}</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">status</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span>
+            <span class="kw">type</span><span class="op">:</span> <span class="str">string</span>
+            <span class="kw">enum</span><span class="op">:</span> <span class="op">[</span><span class="str">ACTIVE</span><span class="op">,</span> <span class="str">INACTIVE</span><span class="op">]</span>
+      <span class="kw">responses</span><span class="op">:</span>
+        <span class="str">'200'</span><span class="op">:</span>
+          <span class="kw">content</span><span class="op">:</span>
+            <span class="kw">application/json</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span>
+                <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+                <span class="kw">properties</span><span class="op">:</span>
+                  <span class="kw">content</span><span class="op">:</span>
+                    <span class="kw">type</span><span class="op">:</span> <span class="str">array</span>
+                    <span class="kw">items</span><span class="op">:</span> <span class="op">{</span><span class="kw">$ref</span><span class="op">:</span> <span class="str">'#/components/schemas/UserSummary'</span><span class="op">}</span>
+                  <span class="kw">page</span><span class="op">:</span>   <span class="op">{</span><span class="kw">$ref</span><span class="op">:</span> <span class="str">'#/components/schemas/PageMetadata'</span><span class="op">}</span>
+
+  <span class="kw">/admin/users/{userId}/roles</span><span class="op">:</span>
+    <span class="kw">patch</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">Replace user roles (triggers JWT revocation)</span>
+      <span class="kw">requestBody</span><span class="op">:</span>
+        <span class="kw">required</span><span class="op">:</span> <span class="nm">true</span>
+        <span class="kw">content</span><span class="op">:</span>
+          <span class="kw">application/json</span><span class="op">:</span>
+            <span class="kw">schema</span><span class="op">:</span>
+              <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+              <span class="kw">properties</span><span class="op">:</span>
+                <span class="kw">roles</span><span class="op">:</span>
+                  <span class="kw">type</span><span class="op">:</span> <span class="str">array</span>
+                  <span class="kw">items</span><span class="op">:</span>
+                    <span class="kw">type</span><span class="op">:</span> <span class="str">string</span>
+                    <span class="kw">enum</span><span class="op">:</span> <span class="op">[</span><span class="str">ROLE_CUSTOMER</span><span class="op">,</span> <span class="str">ROLE_ADMIN</span><span class="op">,</span> <span class="str">ROLE_SUPPORT</span><span class="op">]</span>
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ PRODUCT SERVICE ═══ -->
+<section class="section" id="product">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Product Service — SCRUM-16,17,19</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Public + Internal Endpoints</h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;">
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/products</span>
+          <span class="auth-pub endpoint-auth">public</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/products/{sku}</span>
+          <span class="auth-pub endpoint-auth">public</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/internal/products/stock/reserve</span>
+          <span class="auth-jwt endpoint-auth">svc-to-svc only</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/internal/products/stock/confirm</span>
+          <span class="auth-jwt endpoint-auth">svc-to-svc only</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/internal/products/stock/release</span>
+          <span class="auth-jwt endpoint-auth">svc-to-svc only</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Stock Reservation Pattern</h3>
+      <div class="flow">
+        <div class="flow-row">
+          <div class="flow-node" style="border-color:rgba(255,107,53,0.4);color:var(--accent2)">order-svc</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-node" style="border-color:rgba(16,185,129,0.4);color:var(--green)">POST /stock/reserve</div>
+        </div>
+        <div class="flow-row" style="margin-left:20px;">
+          <div class="flow-arrow">↓ OK</div>
+          <div class="flow-label">lock qty, status=RESERVED, TTL=10min</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node" style="border-color:rgba(255,107,53,0.4);color:var(--accent2)">order-svc</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-node">persist order</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node" style="border-color:rgba(255,107,53,0.4);color:var(--accent2)">order-svc</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-node" style="border-color:rgba(16,185,129,0.4);color:var(--green)">POST /stock/confirm</div>
+        </div>
+        <div class="flow-row" style="margin-left:20px;">
+          <div class="flow-label">On failure anywhere → POST /stock/release</div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:14px;">
+        <strong>Idempotency:</strong> <code>reservationId</code> (UUID) ties reserve/confirm/release. Reservation auto-expires after 10 min via scheduled job if confirm never arrives.
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>OpenAPI 3.0 — Product Service (excerpt)</span></div>
+    <div class="code-body"><span class="kw">paths</span><span class="op">:</span>
+  <span class="kw">/products</span><span class="op">:</span>
+    <span class="kw">get</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">List and filter products</span>
+      <span class="kw">parameters</span><span class="op">:</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">category</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">}</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">minPrice</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">number</span><span class="op">,</span> <span class="kw">format</span><span class="op">:</span> <span class="str">decimal</span><span class="op">}</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">maxPrice</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">number</span><span class="op">,</span> <span class="kw">format</span><span class="op">:</span> <span class="str">decimal</span><span class="op">}</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">inStock</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">boolean</span><span class="op">}</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">sort</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">query</span>
+          <span class="kw">schema</span><span class="op">:</span>
+            <span class="kw">type</span><span class="op">:</span> <span class="str">string</span>
+            <span class="kw">enum</span><span class="op">:</span> <span class="op">[</span><span class="str">price_asc</span><span class="op">,</span> <span class="str">price_desc</span><span class="op">,</span> <span class="str">name_asc</span><span class="op">,</span> <span class="str">created_desc</span><span class="op">]</span>
+      <span class="kw">responses</span><span class="op">:</span>
+        <span class="str">'200'</span><span class="op">:</span>
+          <span class="kw">headers</span><span class="op">:</span>
+            <span class="kw">Cache-Control</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">example</span><span class="op">:</span> <span class="str">"public, max-age=60"</span><span class="op">}</span>
+            <span class="kw">ETag</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">}</span>
+
+  <span class="kw">/internal/products/stock/reserve</span><span class="op">:</span>
+    <span class="kw">post</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">Reserve stock for an order (internal use only)</span>
+      <span class="kw">x-internal</span><span class="op">:</span> <span class="nm">true</span>
+      <span class="kw">requestBody</span><span class="op">:</span>
+        <span class="kw">content</span><span class="op">:</span>
+          <span class="kw">application/json</span><span class="op">:</span>
+            <span class="kw">schema</span><span class="op">:</span>
+              <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+              <span class="kw">required</span><span class="op">:</span> <span class="op">[</span><span class="str">reservationId</span><span class="op">,</span> <span class="str">items</span><span class="op">]</span>
+              <span class="kw">properties</span><span class="op">:</span>
+                <span class="kw">reservationId</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">format</span><span class="op">:</span> <span class="str">uuid</span><span class="op">}</span>
+                <span class="kw">items</span><span class="op">:</span>
+                  <span class="kw">type</span><span class="op">:</span> <span class="str">array</span>
+                  <span class="kw">items</span><span class="op">:</span>
+                    <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+                    <span class="kw">properties</span><span class="op">:</span>
+                      <span class="kw">sku</span><span class="op">:</span>      <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">}</span>
+                      <span class="kw">quantity</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">integer</span><span class="op">,</span> <span class="kw">minimum</span><span class="op">:</span> <span class="nm">1</span><span class="op">}</span>
+      <span class="kw">responses</span><span class="op">:</span>
+        <span class="str">'200'</span><span class="op">:</span> <span class="op">{</span><span class="kw">description</span><span class="op">:</span> <span class="str">Reserved successfully</span><span class="op">}</span>
+        <span class="str">'409'</span><span class="op">:</span> <span class="op">{</span><span class="kw">description</span><span class="op">:</span> <span class="str">Insufficient stock — returns per-SKU shortfalls</span><span class="op">}</span>
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ ORDER SERVICE ═══ -->
+<section class="section" id="order">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Order Service — SCRUM-18 through 22</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Endpoints</h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;">
+        <div class="endpoint">
+          <span class="badge badge-post">POST</span>
+          <span class="endpoint-path">/orders</span>
+          <span class="auth-jwt endpoint-auth">CUSTOMER</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/orders</span>
+          <span class="auth-jwt endpoint-auth">CUSTOMER (own) / ADMIN (all)</span>
+        </div>
+        <div class="endpoint">
+          <span class="badge badge-get">GET</span>
+          <span class="endpoint-path">/orders/{orderId}</span>
+          <span class="auth-jwt endpoint-auth">CUSTOMER (own) / ADMIN (any)</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Server-Side Order Total (SCRUM-20)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-java"></span>Java — PricingService</span></div>
+        <div class="code-body"><span class="cm">// NEVER trust client-submitted price</span>
+<span class="kw">public</span> <span class="tp">OrderTotal</span> <span class="fn">calculate</span><span class="op">(</span><span class="tp">List</span><span class="op">&lt;</span><span class="tp">OrderItemRequest</span><span class="op">&gt;</span> items<span class="op">) {</span>
+    <span class="cm">// 1. Fetch canonical prices from product-service</span>
+    <span class="kw">var</span> skus <span class="op">=</span> items<span class="op">.</span><span class="fn">stream</span><span class="op">().</span><span class="fn">map</span><span class="op">(</span><span class="tp">OrderItemRequest</span><span class="op">::</span><span class="fn">sku</span><span class="op">).</span><span class="fn">toList</span><span class="op">();</span>
+    <span class="kw">var</span> prices <span class="op">=</span> productClient<span class="op">.</span><span class="fn">getPricesBatch</span><span class="op">(</span>skus<span class="op">);</span>
+
+    <span class="cm">// 2. Calculate using BigDecimal (never double/float for money)</span>
+    <span class="kw">var</span> subtotal <span class="op">=</span> items<span class="op">.</span><span class="fn">stream</span><span class="op">()</span>
+        <span class="op">.</span><span class="fn">map</span><span class="op">(</span>i <span class="op">-&gt;</span> prices<span class="op">.</span><span class="fn">get</span><span class="op">(</span>i<span class="op">.</span><span class="fn">sku</span><span class="op">()).</span><span class="fn">multiply</span><span class="op">(</span>
+                     <span class="tp">BigDecimal</span><span class="op">.</span><span class="fn">valueOf</span><span class="op">(</span>i<span class="op">.</span><span class="fn">quantity</span><span class="op">())))</span>
+        <span class="op">.</span><span class="fn">reduce</span><span class="op">(</span><span class="tp">BigDecimal</span><span class="op">.</span>ZERO<span class="op">,</span> <span class="tp">BigDecimal</span><span class="op">::</span>add<span class="op">);</span>
+
+    <span class="cm">// 3. Apply tax (config-driven, not hardcoded)</span>
+    <span class="kw">var</span> tax <span class="op">=</span> subtotal<span class="op">.</span><span class="fn">multiply</span><span class="op">(</span>taxRate<span class="op">);</span>
+    <span class="kw">return new</span> <span class="tp">OrderTotal</span><span class="op">(</span>subtotal<span class="op">,</span> tax<span class="op">,</span> subtotal<span class="op">.</span><span class="fn">add</span><span class="op">(</span>tax<span class="op">));</span>
+<span class="op">}</span>
+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>OpenAPI 3.0 — Order Service (excerpt)</span></div>
+    <div class="code-body"><span class="kw">paths</span><span class="op">:</span>
+  <span class="kw">/orders</span><span class="op">:</span>
+    <span class="kw">post</span><span class="op">:</span>
+      <span class="kw">summary</span><span class="op">:</span> <span class="str">Create order (idempotent)</span>
+      <span class="kw">security</span><span class="op">:</span> <span class="op">[{</span><span class="kw">BearerAuth</span><span class="op">:</span> <span class="op">[]}]</span>
+      <span class="kw">parameters</span><span class="op">:</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> <span class="str">Idempotency-Key</span>
+          <span class="kw">in</span><span class="op">:</span> <span class="str">header</span>
+          <span class="kw">required</span><span class="op">:</span> <span class="nm">true</span>
+          <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">format</span><span class="op">:</span> <span class="str">uuid</span><span class="op">}</span>
+      <span class="kw">requestBody</span><span class="op">:</span>
+        <span class="kw">content</span><span class="op">:</span>
+          <span class="kw">application/json</span><span class="op">:</span>
+            <span class="kw">schema</span><span class="op">:</span>
+              <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+              <span class="kw">required</span><span class="op">:</span> <span class="op">[</span><span class="str">items</span><span class="op">]</span>
+              <span class="kw">properties</span><span class="op">:</span>
+                <span class="kw">items</span><span class="op">:</span>
+                  <span class="kw">type</span><span class="op">:</span> <span class="str">array</span>
+                  <span class="kw">minItems</span><span class="op">:</span> <span class="nm">1</span>
+                  <span class="kw">items</span><span class="op">:</span>
+                    <span class="kw">type</span><span class="op">:</span> <span class="str">object</span>
+                    <span class="kw">required</span><span class="op">:</span> <span class="op">[</span><span class="str">sku</span><span class="op">,</span> <span class="str">quantity</span><span class="op">]</span>
+                    <span class="kw">properties</span><span class="op">:</span>
+                      <span class="kw">sku</span><span class="op">:</span>      <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">}</span>
+                      <span class="kw">quantity</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">integer</span><span class="op">,</span> <span class="kw">minimum</span><span class="op">:</span> <span class="nm">1</span><span class="op">}</span>
+                      <span class="cm"># clientPrice intentionally OMITTED — server always recalculates</span>
+      <span class="kw">responses</span><span class="op">:</span>
+        <span class="str">'201'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Order created with server-calculated totals</span>
+          <span class="kw">headers</span><span class="op">:</span>
+            <span class="kw">Location</span><span class="op">:</span>
+              <span class="kw">schema</span><span class="op">:</span> <span class="op">{</span><span class="kw">type</span><span class="op">:</span> <span class="str">string</span><span class="op">,</span> <span class="kw">example</span><span class="op">:</span> <span class="str">"/orders/ord_01J9..."</span><span class="op">}</span>
+        <span class="str">'409'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Idempotency-Key already used — returns original response</span>
+        <span class="str">'422'</span><span class="op">:</span>
+          <span class="kw">description</span><span class="op">:</span> <span class="str">Insufficient stock — includes per-item detail</span>
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ SECURITY ═══ -->
+<section class="section" id="security">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Security Design — JWT, RBAC, Zero-Trust</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Request Flow — JWT Validation</h3>
+      <div class="flow">
+        <div class="flow-row">
+          <div class="flow-node" style="border-color:rgba(245,158,11,0.4);color:var(--yellow)">Client</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-node" style="border-color:rgba(245,158,11,0.4);color:var(--yellow)">GKE Ingress</div>
+        </div>
+        <div class="flow-row" style="padding-left:20px;">
+          <div class="flow-arrow">↓</div>
+          <div class="flow-label">Authorization: Bearer &lt;AT&gt;</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node">JwtAuthFilter</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-label">Verify RS256 sig against JWKS</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node">JwtAuthFilter</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-label">Check exp, iss, aud claims</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node">JwtAuthFilter</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-label">Check jti NOT in Redis blocklist</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node">SecurityContext</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-label">Populate Authentication + roles</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-node" style="border-color:rgba(16,185,129,0.4);color:var(--green)">@PreAuthorize</div>
+          <div class="flow-arrow">──→</div>
+          <div class="flow-label">Method-level RBAC check</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">RBAC Matrix</h3>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Resource</th><th>CUSTOMER</th><th>SUPPORT</th><th>ADMIN</th></tr></thead>
+          <tbody>
+            <tr><td>Register</td><td>✅</td><td>—</td><td>—</td></tr>
+            <tr><td>Own Profile</td><td>R/W</td><td>R</td><td>R/W</td></tr>
+            <tr><td>All Users</td><td>❌</td><td>R</td><td>R/W</td></tr>
+            <tr><td>Assign Roles</td><td>❌</td><td>❌</td><td>✅</td></tr>
+            <tr><td>Deactivate User</td><td>❌</td><td>❌</td><td>✅</td></tr>
+            <tr><td>Products</td><td>R</td><td>R</td><td>R/W</td></tr>
+            <tr><td>Own Orders</td><td>R/W</td><td>R</td><td>R</td></tr>
+            <tr><td>All Orders</td><td>❌</td><td>R</td><td>R/W</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-java"></span>Spring Security Config — SecurityFilterChain</span></div>
+    <div class="code-body"><span class="op">@</span><span class="tp">Configuration</span>
+<span class="op">@</span><span class="tp">EnableMethodSecurity</span><span class="op">(</span>prePostEnabled <span class="op">=</span> <span class="nm">true</span><span class="op">)</span>
+<span class="kw">public class</span> <span class="tp">SecurityConfig</span> <span class="op">{</span>
+
+  <span class="op">@</span><span class="tp">Bean</span>
+  <span class="kw">public</span> <span class="tp">SecurityFilterChain</span> <span class="fn">filterChain</span><span class="op">(</span><span class="tp">HttpSecurity</span> http<span class="op">) throws</span> <span class="tp">Exception</span> <span class="op">{</span>
+    <span class="kw">return</span> http
+      <span class="op">.</span><span class="fn">csrf</span><span class="op">(</span><span class="tp">AbstractHttpConfigurer</span><span class="op">::</span>disable<span class="op">)</span>   <span class="cm">// stateless REST</span>
+      <span class="op">.</span><span class="fn">sessionManagement</span><span class="op">(</span>s <span class="op">-&gt;</span> s<span class="op">.</span><span class="fn">sessionCreationPolicy</span><span class="op">(</span>STATELESS<span class="op">))</span>
+      <span class="op">.</span><span class="fn">authorizeHttpRequests</span><span class="op">(</span>auth <span class="op">-&gt;</span> auth
+        <span class="op">.</span><span class="fn">requestMatchers</span><span class="op">(</span><span class="str">"/auth/**"</span><span class="op">,</span> <span class="str">"/products/**"</span><span class="op">,</span> <span class="str">"/actuator/health"</span><span class="op">).</span><span class="fn">permitAll</span><span class="op">()</span>
+        <span class="op">.</span><span class="fn">requestMatchers</span><span class="op">(</span><span class="str">"/admin/**"</span><span class="op">).</span><span class="fn">hasRole</span><span class="op">(</span><span class="str">"ADMIN"</span><span class="op">)</span>
+        <span class="op">.</span><span class="fn">requestMatchers</span><span class="op">(</span><span class="str">"/internal/**"</span><span class="op">).</span><span class="fn">hasRole</span><span class="op">(</span><span class="str">"SERVICE"</span><span class="op">)</span>  <span class="cm">// svc-to-svc JWT</span>
+        <span class="op">.</span><span class="fn">anyRequest</span><span class="op">().</span><span class="fn">authenticated</span><span class="op">())</span>
+      <span class="op">.</span><span class="fn">oauth2ResourceServer</span><span class="op">(</span>rs <span class="op">-&gt;</span> rs
+        <span class="op">.</span><span class="fn">jwt</span><span class="op">(</span>jwt <span class="op">-&gt;</span> jwt
+          <span class="op">.</span><span class="fn">jwkSetUri</span><span class="op">(</span><span class="str">"${auth.jwks-uri}"</span><span class="op">)</span>           <span class="cm">// 12-factor: config from env</span>
+          <span class="op">.</span><span class="fn">jwtAuthenticationConverter</span><span class="op">(</span>customConverter<span class="op">())))</span>
+      <span class="op">.</span><span class="fn">addFilterBefore</span><span class="op">(</span>jtiBlocklistFilter<span class="op">,</span> <span class="tp">BearerTokenAuthenticationFilter</span><span class="op">.</span><span class="kw">class</span><span class="op">)</span>
+      <span class="op">.</span><span class="fn">build</span><span class="op">();</span>
+  <span class="op">}</span>
+
+  <span class="cm">// Method-level role enforcement (SCRUM-10, SCRUM-22)</span>
+  <span class="op">@</span><span class="tp">PreAuthorize</span><span class="op">(</span><span class="str">"hasRole('ADMIN') or #userId == authentication.name"</span><span class="op">)</span>
+  <span class="kw">public</span> <span class="tp">OrderDetailResponse</span> <span class="fn">getOrderDetail</span><span class="op">(</span><span class="tp">String</span> orderId<span class="op">,</span> <span class="tp">String</span> userId<span class="op">) { ... }</span>
+<span class="op">}</span>
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ DATA MODELS ═══ -->
+<section class="section" id="data">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>Data Models — Entity Diagrams</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:15px; margin-bottom:12px;"><span class="service-tag tag-auth">auth_db</span></h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-mermaid"></span>ERD — Auth Schema</span></div>
+        <div class="code-body"><span class="cm">credentials</span>
+  id          UUID PK   (UUIDv7)
+  email       VARCHAR   UNIQUE NOT NULL
+  password    VARCHAR   NOT NULL  <span class="cm">(bcrypt cost=12)</span>
+  status      ENUM      (ACTIVE, INACTIVE, LOCKED)
+  created_at  TIMESTAMPTZ
+  updated_at  TIMESTAMPTZ
+
+<span class="cm">refresh_tokens</span>
+  id          UUID PK
+  user_id     UUID      NOT NULL  <span class="cm">→ credentials.id (logical FK)</span>
+  token_hash  VARCHAR   UNIQUE    <span class="cm">(SHA-256 of raw RT)</span>
+  device_hint VARCHAR   <span class="cm">(user-agent truncated)</span>
+  expires_at  TIMESTAMPTZ
+  revoked_at  TIMESTAMPTZ
+  created_at  TIMESTAMPTZ
+
+  INDEX: (user_id, revoked_at)   <span class="cm">-- fast revocation queries</span>
+  INDEX: (token_hash)
+
+<span class="cm">DESIGN NOTE:</span>
+  No FK to identity_db.users — cross-service constraint
+  enforced at application layer only.
+  email stored here for login lookup only.
+</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:15px; margin-bottom:12px;"><span class="service-tag tag-user">identity_db</span></h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-mermaid"></span>ERD — Identity Schema</span></div>
+        <div class="code-body"><span class="cm">users</span>
+  id          UUID PK   (same as credentials.id)
+  first_name  VARCHAR   NOT NULL
+  last_name   VARCHAR   NOT NULL
+  email       VARCHAR   NOT NULL  <span class="cm">(denormalised for display)</span>
+  phone       VARCHAR
+  status      ENUM      (ACTIVE, INACTIVE)
+  created_at  TIMESTAMPTZ
+  updated_at  TIMESTAMPTZ
+
+<span class="cm">user_roles</span>
+  id          UUID PK
+  user_id     UUID      FK → users.id
+  role        ENUM      (ROLE_CUSTOMER, ROLE_ADMIN, ROLE_SUPPORT)
+  assigned_at TIMESTAMPTZ
+  assigned_by UUID      <span class="cm">(admin userId)</span>
+
+  INDEX: (user_id)
+
+<span class="cm">addresses</span>
+  id          UUID PK
+  user_id     UUID      FK → users.id
+  type        ENUM      (BILLING, SHIPPING)
+  line1       VARCHAR
+  city        VARCHAR
+  country     CHAR(2)   <span class="cm">(ISO 3166-1 alpha-2)</span>
+  postal_code VARCHAR
+  is_default  BOOLEAN
+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:15px; margin-bottom:12px;"><span class="service-tag tag-product">product_db</span></h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-mermaid"></span>ERD — Product Schema</span></div>
+        <div class="code-body"><span class="cm">products</span>
+  id          UUID PK
+  sku         VARCHAR   UNIQUE NOT NULL
+  name        VARCHAR   NOT NULL
+  description TEXT
+  category_id UUID      FK → categories.id
+  price       NUMERIC(12,4) NOT NULL  <span class="cm">(BigDecimal)</span>
+  active      BOOLEAN   DEFAULT TRUE
+  created_at  TIMESTAMPTZ
+  updated_at  TIMESTAMPTZ
+
+  INDEX: (category_id)
+  INDEX: (sku)
+  INDEX: (active, price)    <span class="cm">-- filter+sort</span>
+
+<span class="cm">stock</span>
+  id              UUID PK
+  product_id      UUID  FK → products.id UNIQUE
+  qty_available   INT   NOT NULL CHECK (>= 0)
+  qty_reserved    INT   NOT NULL DEFAULT 0
+  updated_at      TIMESTAMPTZ
+
+<span class="cm">stock_reservations</span>
+  id              UUID PK   <span class="cm">(reservationId)</span>
+  product_id      UUID  FK → products.id
+  quantity        INT   NOT NULL
+  status          ENUM  (RESERVED, CONFIRMED, RELEASED)
+  expires_at      TIMESTAMPTZ
+  created_at      TIMESTAMPTZ
+</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:'Syne',sans-serif; font-size:15px; margin-bottom:12px;"><span class="service-tag tag-order">order_db</span></h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-mermaid"></span>ERD — Order Schema</span></div>
+        <div class="code-body"><span class="cm">orders</span>
+  id              UUID PK   (UUIDv7 — sortable)
+  idempotency_key UUID      UNIQUE NOT NULL
+  customer_id     UUID      NOT NULL  <span class="cm">(JWT sub, no FK)</span>
+  status          ENUM      (PENDING, CONFIRMED, CANCELLED)
+  subtotal        NUMERIC(12,4)
+  tax             NUMERIC(12,4)
+  total           NUMERIC(12,4)
+  reservation_id  UUID      <span class="cm">(→ product-svc reservation)</span>
+  created_at      TIMESTAMPTZ
+  updated_at      TIMESTAMPTZ
+
+  INDEX: (customer_id, created_at DESC)  <span class="cm">-- history query</span>
+  INDEX: (idempotency_key)
+
+<span class="cm">order_items</span>
+  id          UUID PK
+  order_id    UUID  FK → orders.id
+  sku         VARCHAR   NOT NULL  <span class="cm">(snapshot at order time)</span>
+  name        VARCHAR   NOT NULL  <span class="cm">(snapshot — denormalised)</span>
+  unit_price  NUMERIC(12,4)       <span class="cm">(snapshot at order time)</span>
+  quantity    INT       NOT NULL
+  line_total  NUMERIC(12,4)
+
+  <span class="cm">CRITICAL: snapshot product data — never join back to product-svc</span>
+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ COMMS ═══ -->
+<section class="section" id="comms">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>Inter-Service Communication Patterns</h2>
+  </div>
+
+  <div class="callout">
+    <strong>Pattern selection:</strong> Synchronous REST for operations requiring immediate consistency (stock reservation during order creation). Asynchronous events for decoupled state propagation (role changes, account deactivation) using a lightweight approach. All inter-service calls use mTLS within the cluster.
+  </div>
+
+  <div class="table-wrap" style="margin-bottom:28px;">
+    <table class="data-table">
+      <thead><tr><th>Caller</th><th>Callee</th><th>Operation</th><th>Pattern</th><th>Failure Mode</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="service-tag tag-order" style="margin:0">order-svc</span></td>
+          <td><span class="service-tag tag-product" style="margin:0">product-svc</span></td>
+          <td>Reserve / Confirm / Release stock</td>
+          <td><code>Sync REST</code></td>
+          <td>Rollback reservation, return 422 to client</td>
+        </tr>
+        <tr>
+          <td><span class="service-tag tag-order" style="margin:0">order-svc</span></td>
+          <td><span class="service-tag tag-product" style="margin:0">product-svc</span></td>
+          <td>Fetch canonical prices</td>
+          <td><code>Sync REST</code></td>
+          <td>Circuit breaker → reject order</td>
+        </tr>
+        <tr>
+          <td><span class="service-tag tag-user" style="margin:0">identity-svc</span></td>
+          <td><span class="service-tag tag-auth" style="margin:0">auth-svc</span></td>
+          <td>Revoke all tokens for userId (role change, deactivation)</td>
+          <td><code>Sync REST (internal)</code></td>
+          <td>Log + async retry; accept eventual consistency</td>
+        </tr>
+        <tr>
+          <td>All services</td>
+          <td><span class="service-tag tag-auth" style="margin:0">auth-svc</span></td>
+          <td>JWKS key fetch for JWT validation</td>
+          <td><code>Sync REST + local cache</code></td>
+          <td>Cached keys (TTL=1hr) tolerate auth-svc outage</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-java"></span>Spring — RestClient with Circuit Breaker (order → product)</span></div>
+    <div class="code-body"><span class="op">@</span><span class="tp">Bean</span>
+<span class="kw">public</span> <span class="tp">ProductClient</span> <span class="fn">productClient</span><span class="op">(</span><span class="tp">RestClient</span><span class="op">.</span><span class="tp">Builder</span> builder<span class="op">) {</span>
+  <span class="kw">return</span> <span class="tp">HttpServiceProxyFactory</span>
+    <span class="op">.</span><span class="fn">builderFor</span><span class="op">(</span><span class="tp">RestClientAdapter</span><span class="op">.</span><span class="fn">create</span><span class="op">(</span>builder
+      <span class="op">.</span><span class="fn">baseUrl</span><span class="op">(</span><span class="str">"${services.product.url}"</span><span class="op">)</span>   <span class="cm">// 12-factor: from env</span>
+      <span class="op">.</span><span class="fn">requestInterceptor</span><span class="op">(</span>serviceJwtInterceptor<span class="op">)</span>   <span class="cm">// svc-to-svc JWT</span>
+      <span class="op">.</span><span class="fn">build</span><span class="op">()))</span>
+    <span class="op">.</span><span class="fn">build</span><span class="op">()</span>
+    <span class="op">.</span><span class="fn">createClient</span><span class="op">(</span><span class="tp">ProductClient</span><span class="op">.</span><span class="kw">class</span><span class="op">);</span>
+<span class="op">}</span>
+
+<span class="cm">// Resilience4j circuit breaker on stock reservation</span>
+<span class="op">@</span><span class="tp">CircuitBreaker</span><span class="op">(</span>name <span class="op">=</span> <span class="str">"product-svc"</span><span class="op">,</span> fallbackMethod <span class="op">=</span> <span class="str">"reserveStockFallback"</span><span class="op">)</span>
+<span class="op">@</span><span class="tp">Retry</span><span class="op">(</span>name <span class="op">=</span> <span class="str">"product-svc"</span><span class="op">)</span>
+<span class="kw">public</span> <span class="tp">ReservationResponse</span> <span class="fn">reserveStock</span><span class="op">(</span><span class="tp">ReservationRequest</span> req<span class="op">) {</span>
+  <span class="kw">return</span> productClient<span class="op">.</span><span class="fn">reserveStock</span><span class="op">(</span>req<span class="op">);</span>
+<span class="op">}</span>
+<span class="kw">private</span> <span class="tp">ReservationResponse</span> <span class="fn">reserveStockFallback</span><span class="op">(</span><span class="tp">Throwable</span> t<span class="op">) {</span>
+  <span class="kw">throw new</span> <span class="tp">ServiceUnavailableException</span><span class="op">(</span><span class="str">"Product service unavailable, order rejected"</span><span class="op">);</span>
+<span class="op">}</span>
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ INFRA ═══ -->
+<section class="section" id="infra">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>Infrastructure — Docker, GKE, CI/CD (SCRUM-23,24,25)</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>Dockerfile — Multi-Stage (distroless)</span></div>
+        <div class="code-body"><span class="cm"># Stage 1: Build</span>
+<span class="kw">FROM</span> eclipse-temurin:17-jdk-alpine <span class="kw">AS</span> build
+<span class="kw">WORKDIR</span> /workspace
+<span class="kw">COPY</span> . .
+<span class="kw">RUN</span> ./mvnw -pl auth-service package \
+    -DskipTests --no-transfer-progress
+
+<span class="cm"># Stage 2: Extract layers (Spring Boot layered jar)</span>
+<span class="kw">FROM</span> eclipse-temurin:17-jdk-alpine <span class="kw">AS</span> extract
+<span class="kw">WORKDIR</span> /workspace
+<span class="kw">COPY</span> --from=build /workspace/auth-service/target/*.jar app.jar
+<span class="kw">RUN</span> java -Djarmode=layertools -jar app.jar extract
+
+<span class="cm"># Stage 3: Runtime (distroless — no shell, minimal CVE surface)</span>
+<span class="kw">FROM</span> gcr.io/distroless/java17-debian12
+<span class="kw">WORKDIR</span> /application
+<span class="kw">COPY</span> --from=extract /workspace/dependencies/ ./
+<span class="kw">COPY</span> --from=extract /workspace/snapshot-dependencies/ ./
+<span class="kw">COPY</span> --from=extract /workspace/spring-boot-loader/ ./
+<span class="kw">COPY</span> --from=extract /workspace/application/ ./
+
+<span class="kw">USER</span> nonroot:nonroot  <span class="cm"># never run as root</span>
+<span class="kw">EXPOSE</span> 8080
+<span class="kw">ENTRYPOINT</span> ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+</div>
+      </div>
+    </div>
+    <div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>K8s Deployment — auth-service</span></div>
+        <div class="code-body"><span class="kw">apiVersion</span><span class="op">:</span> apps/v1
+<span class="kw">kind</span><span class="op">:</span> Deployment
+<span class="kw">metadata</span><span class="op">:</span>
+  <span class="kw">name</span><span class="op">:</span> auth-service
+<span class="kw">spec</span><span class="op">:</span>
+  <span class="kw">replicas</span><span class="op">:</span> <span class="nm">3</span>
+  <span class="kw">strategy</span><span class="op">:</span>
+    <span class="kw">type</span><span class="op">:</span> RollingUpdate
+    <span class="kw">rollingUpdate</span><span class="op">:</span>
+      <span class="kw">maxUnavailable</span><span class="op">:</span> <span class="nm">1</span>
+      <span class="kw">maxSurge</span><span class="op">:</span> <span class="nm">1</span>
+  <span class="kw">template</span><span class="op">:</span>
+    <span class="kw">spec</span><span class="op">:</span>
+      <span class="kw">securityContext</span><span class="op">:</span>
+        <span class="kw">runAsNonRoot</span><span class="op">:</span> <span class="nm">true</span>
+        <span class="kw">readOnlyRootFilesystem</span><span class="op">:</span> <span class="nm">true</span>
+      <span class="kw">containers</span><span class="op">:</span>
+        <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> auth-service
+          <span class="kw">image</span><span class="op">:</span> <span class="str">gcr.io/PROJECT/auth-service:$(IMAGE_TAG)</span>
+          <span class="kw">ports</span><span class="op">:</span>
+            <span class="op">-</span> <span class="kw">containerPort</span><span class="op">:</span> <span class="nm">8080</span>
+          <span class="kw">env</span><span class="op">:</span>
+            <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> SPRING_DATASOURCE_URL
+              <span class="kw">valueFrom</span><span class="op">:</span>
+                <span class="kw">secretKeyRef</span><span class="op">:</span>
+                  <span class="kw">name</span><span class="op">:</span> auth-secrets
+                  <span class="kw">key</span><span class="op">:</span> db-url
+          <span class="kw">resources</span><span class="op">:</span>
+            <span class="kw">requests</span><span class="op">:</span> <span class="op">{</span><span class="kw">cpu</span><span class="op">:</span> <span class="str">200m</span><span class="op">,</span> <span class="kw">memory</span><span class="op">:</span> <span class="str">512Mi</span><span class="op">}</span>
+            <span class="kw">limits</span><span class="op">:</span>   <span class="op">{</span><span class="kw">cpu</span><span class="op">:</span> <span class="str">500m</span><span class="op">,</span> <span class="kw">memory</span><span class="op">:</span> <span class="str">1Gi</span><span class="op">}</span>
+          <span class="kw">readinessProbe</span><span class="op">:</span>
+            <span class="kw">httpGet</span><span class="op">:</span> <span class="op">{</span><span class="kw">path</span><span class="op">:</span> <span class="str">/actuator/health/readiness</span><span class="op">,</span> <span class="kw">port</span><span class="op">:</span> <span class="nm">8080</span><span class="op">}</span>
+          <span class="kw">livenessProbe</span><span class="op">:</span>
+            <span class="kw">httpGet</span><span class="op">:</span> <span class="op">{</span><span class="kw">path</span><span class="op">:</span> <span class="str">/actuator/health/liveness</span><span class="op">,</span> <span class="kw">port</span><span class="op">:</span> <span class="nm">8080</span><span class="op">}</span>
+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>CI/CD Pipeline — GitHub Actions with Automated Rollback (SCRUM-25)</span></div>
+    <div class="code-body"><span class="kw">name</span><span class="op">:</span> Deploy with Auto-Rollback
+
+<span class="kw">on</span><span class="op">:</span>
+  <span class="kw">push</span><span class="op">:</span>
+    <span class="kw">branches</span><span class="op">:</span> <span class="op">[</span><span class="str">main</span><span class="op">]</span>
+
+<span class="kw">jobs</span><span class="op">:</span>
+  <span class="kw">test</span><span class="op">:</span>
+    <span class="kw">runs-on</span><span class="op">:</span> ubuntu-latest
+    <span class="kw">steps</span><span class="op">:</span>
+      <span class="op">-</span> <span class="kw">uses</span><span class="op">:</span> actions/checkout@v4
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> Unit + Integration Tests
+        <span class="kw">run</span><span class="op">:</span> <span class="str">./mvnw verify -Pintegration-tests</span>
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> OWASP Dependency Check
+        <span class="kw">run</span><span class="op">:</span> <span class="str">./mvnw org.owasp:dependency-check-maven:check</span>
+
+  <span class="kw">build-push</span><span class="op">:</span>
+    <span class="kw">needs</span><span class="op">:</span> test
+    <span class="kw">steps</span><span class="op">:</span>
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> Build &amp; push image
+        <span class="kw">run</span><span class="op">:</span> <span class="op">|</span>
+          <span class="str">docker build --tag gcr.io/$PROJECT/$SERVICE:$GITHUB_SHA .</span>
+          <span class="str">docker push gcr.io/$PROJECT/$SERVICE:$GITHUB_SHA</span>
+
+  <span class="kw">deploy</span><span class="op">:</span>
+    <span class="kw">needs</span><span class="op">:</span> build-push
+    <span class="kw">environment</span><span class="op">:</span> production
+    <span class="kw">steps</span><span class="op">:</span>
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> Record current revision (rollback target)
+        <span class="kw">run</span><span class="op">:</span> <span class="str">kubectl rollout history deploy/$SERVICE --revision=0 &gt; previous_revision</span>
+
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> Deploy new image
+        <span class="kw">run</span><span class="op">:</span> <span class="str">kubectl set image deploy/$SERVICE app=gcr.io/$PROJECT/$SERVICE:$GITHUB_SHA</span>
+
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> Wait for rollout &amp; health gate
+        <span class="kw">run</span><span class="op">:</span> <span class="op">|</span>
+          <span class="str">kubectl rollout status deploy/$SERVICE --timeout=5m || {</span>
+            <span class="str">echo "Rollout failed — initiating rollback"</span>
+            <span class="str">kubectl rollout undo deploy/$SERVICE</span>
+            <span class="str">exit 1</span>
+          <span class="str">}</span>
+
+      <span class="op">-</span> <span class="kw">name</span><span class="op">:</span> Smoke test (readiness endpoint)
+        <span class="kw">run</span><span class="op">:</span> <span class="op">|</span>
+          <span class="str">STATUS=$(curl -so /dev/null -w "%{http_code}" $SERVICE_URL/actuator/health)</span>
+          <span class="str">[ "$STATUS" = "200" ] || { kubectl rollout undo deploy/$SERVICE; exit 1; }</span>
+</div>
+  </div>
+
+  <hr class="divider">
+
+  <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">HPA — Horizontal Pod Autoscaler</h3>
+  <div class="code-block">
+    <div class="code-header"><span class="code-lang"><span class="code-dot dot-yaml"></span>HPA + PodDisruptionBudget</span></div>
+    <div class="code-body"><span class="kw">apiVersion</span><span class="op">:</span> autoscaling/v2
+<span class="kw">kind</span><span class="op">:</span> HorizontalPodAutoscaler
+<span class="kw">metadata</span><span class="op">:</span>
+  <span class="kw">name</span><span class="op">:</span> order-service-hpa
+<span class="kw">spec</span><span class="op">:</span>
+  <span class="kw">scaleTargetRef</span><span class="op">:</span>
+    <span class="kw">apiVersion</span><span class="op">:</span> apps/v1
+    <span class="kw">kind</span><span class="op">:</span> Deployment
+    <span class="kw">name</span><span class="op">:</span> order-service
+  <span class="kw">minReplicas</span><span class="op">:</span> <span class="nm">2</span>
+  <span class="kw">maxReplicas</span><span class="op">:</span> <span class="nm">10</span>
+  <span class="kw">metrics</span><span class="op">:</span>
+    <span class="op">-</span> <span class="kw">type</span><span class="op">:</span> Resource
+      <span class="kw">resource</span><span class="op">:</span>
+        <span class="kw">name</span><span class="op">:</span> cpu
+        <span class="kw">target</span><span class="op">:</span>
+          <span class="kw">type</span><span class="op">:</span> Utilization
+          <span class="kw">averageUtilization</span><span class="op">:</span> <span class="nm">70</span>
+<span class="op">---</span>
+<span class="kw">apiVersion</span><span class="op">:</span> policy/v1
+<span class="kw">kind</span><span class="op">:</span> PodDisruptionBudget
+<span class="kw">spec</span><span class="op">:</span>
+  <span class="kw">minAvailable</span><span class="op">:</span> <span class="str">"51%"</span>   <span class="cm"># ensures quorum during node drain / upgrades</span>
+  <span class="kw">selector</span><span class="op">:</span>
+    <span class="kw">matchLabels</span><span class="op">:</span>
+      <span class="kw">app</span><span class="op">:</span> order-service
+</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ RISKS ═══ -->
+<section class="section" id="risks">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>Risks, Anti-Patterns & Mitigations</h2>
+  </div>
+
+  <div class="risk-box risk-high">
+    <div class="risk-icon">🔴</div>
+    <div>
+      <div class="risk-title">ANTI-PATTERN: Distributed Monolith (SCRUM-19)</div>
+      <div class="risk-desc">If order-service calls product-service synchronously AND both share a DB, you've created a distributed monolith. The sync REST call for stock reservation creates runtime coupling — if product-service is down, orders cannot be placed even if it's a temporary outage.</div>
+      <div class="risk-fix">FIX: Circuit breaker (Resilience4j) + bulkhead pattern. Consider event-driven saga for order creation flow at scale. Reserve stock with compensating transaction on failure.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-high">
+    <div class="risk-icon">🔴</div>
+    <div>
+      <div class="risk-title">RISK: JWT Stale Roles Window (SCRUM-11)</div>
+      <div class="risk-desc">Access tokens are self-contained. A role downgrade (ADMIN → CUSTOMER) won't take effect for up to 15 minutes if the AT is still valid. This is a real privilege escalation window.</div>
+      <div class="risk-fix">FIX: Redis-backed JTI blocklist + force-revocation endpoint on auth-service called synchronously by identity-service on role change. Keep AT TTL to 15 min max.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-high">
+    <div class="risk-icon">🔴</div>
+    <div>
+      <div class="risk-title">RISK: No Idempotency Key Enforcement (SCRUM-18)</div>
+      <div class="risk-desc">Network retries on POST /orders without idempotency protection will create duplicate orders. Mobile clients and unreliable networks make this a production incident waiting to happen.</div>
+      <div class="risk-fix">FIX: Require Idempotency-Key header (UUID v4/v7). Store key+response in Redis (TTL=24hr). Return cached response if key already seen. Return 409 if key processed with different payload.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-med">
+    <div class="risk-icon">🟡</div>
+    <div>
+      <div class="risk-title">ANTI-PATTERN: Email Stored in Both auth_db and identity_db</div>
+      <div class="risk-desc">Email is the login identifier (auth_db) AND a profile field (identity_db). An email change in identity-service won't propagate to auth-service — login will stop working or use stale email.</div>
+      <div class="risk-fix">FIX: Email changes must go through auth-service. Identity-service caches email as read-only display value. Or: use userId as the only cross-service identifier, email changes are auth-service only.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-med">
+    <div class="risk-icon">🟡</div>
+    <div>
+      <div class="risk-title">RISK: No Rate Limiting on Auth Endpoints (SCRUM-6,7)</div>
+      <div class="risk-desc">POST /auth/login and /auth/register without rate limiting are open to brute-force and registration spam. A bot can attempt unlimited credential guesses.</div>
+      <div class="risk-fix">FIX: Bucket4j rate limiter per IP (e.g. 10 login attempts / 15 min). Account lockout after 5 failed attempts (LOCKED status in credentials table). reCAPTCHA on register endpoint.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-med">
+    <div class="risk-icon">🟡</div>
+    <div>
+      <div class="risk-title">RISK: Product Price Staleness in Order Snapshots (SCRUM-20)</div>
+      <div class="risk-desc">Order-service fetches live price from product-service at order creation time. If product-service is slow, this creates latency. The snapshot is correct at creation but there's no audit trail of what price was used.</div>
+      <div class="risk-fix">FIX: Always snapshot unit_price in order_items (already in model). Add priceSnapshotAt timestamp. Consider caching prices in order-service (TTL=5min) to reduce sync call latency.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-low">
+    <div class="risk-icon">🟢</div>
+    <div>
+      <div class="risk-title">OBSERVATION: Shared Library for JWT Validation (SCRUM-9)</div>
+      <div class="risk-desc">Extracting JWT validation into a shared library (JAR) creates a compile-time dependency. All services must upgrade together when the library changes. This is a controlled coupling tradeoff.</div>
+      <div class="risk-fix">ACCEPTED: For a team this size, shared-lib is pragmatic. Use semantic versioning + compatibility matrix. Alternative at scale: validate JWT locally in each service via JWKS — no shared lib needed, truly decoupled.</div>
+    </div>
+  </div>
+
+  <div class="risk-box risk-low">
+    <div class="risk-icon">🟢</div>
+    <div>
+      <div class="risk-title">OBSERVATION: No API Gateway in Current Design</div>
+      <div class="risk-desc">GKE Ingress + Cloud Armor handles routing and DDoS, but there's no dedicated API gateway for cross-cutting concerns (rate limiting, request transformation, API versioning, analytics).</div>
+      <div class="risk-fix">FUTURE: Consider Cloud Endpoints or Kong on GKE as the codebase grows. For current scope, Spring Cloud Gateway as a lightweight option adds rate limiting, auth delegation, and routing in one deployment.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ NFR ═══ -->
+<section class="section" id="nfr">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2>Non-Functional Requirements</h2>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:28px;">
+    <div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Concern</th><th>Target</th><th>Mechanism</th></tr></thead>
+          <tbody>
+            <tr><td>Availability</td><td>99.9% per service</td><td>minReplicas=2, PodDisruptionBudget, multi-zone GKE</td></tr>
+            <tr><td>Latency (p99)</td><td>&lt; 200ms per endpoint</td><td>DB connection pooling (HikariCP), async I/O where possible</td></tr>
+            <tr><td>Throughput</td><td>500 RPS per service</td><td>HPA (CPU &gt; 70%), vertical pod autoscaler for sizing</td></tr>
+            <tr><td>DB Connections</td><td>Pool per service</td><td>HikariCP: max 20 per pod, PgBouncer sidecar for large clusters</td></tr>
+            <tr><td>Cold Start</td><td>&lt; 30s pod ready</td><td>Layered Docker builds, Spring AOT/GraalVM (future)</td></tr>
+            <tr><td>Data Durability</td><td>RPO &lt; 1 hour</td><td>Cloud SQL automated daily backups + PITR</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>12-Factor</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>I. Codebase</td><td>One repo per service, Git monorepo acceptable</td></tr>
+            <tr><td>II. Dependencies</td><td>Maven BOM, Docker image pins all transitive deps</td></tr>
+            <tr><td>III. Config</td><td>All secrets via K8s Secrets / GCP Secret Manager → env vars</td></tr>
+            <tr><td>IV. Backing Services</td><td>DB URLs, Redis URLs injected — swappable without code change</td></tr>
+            <tr><td>VI. Processes</td><td>Stateless pods; no sticky sessions; session = JWT</td></tr>
+            <tr><td>VII. Port Binding</td><td>Each service self-contained on port 8080</td></tr>
+            <tr><td>IX. Disposability</td><td>Fast startup (&lt;30s), graceful shutdown via SIGTERM hook</td></tr>
+            <tr><td>XI. Logs</td><td>Structured JSON to stdout → Cloud Logging</td></tr>
+            <tr><td>XII. Admin</td><td>One-off tasks via K8s Jobs, not ssh into pods</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Syne',sans-serif; font-size:16px; margin-bottom:16px;">Observability Stack</h3>
+  <div class="grid grid-3">
+    <div class="card infra">
+      <div class="card-icon">📊</div>
+      <h3>Metrics</h3>
+      <p>Spring Boot Actuator + Micrometer → Prometheus → Grafana dashboards. Alert on: p99 latency, error rate &gt; 1%, DB pool saturation.</p>
+    </div>
+    <div class="card infra">
+      <div class="card-icon">🔍</div>
+      <h3>Tracing</h3>
+      <p>Spring Micrometer Tracing (Brave) → Cloud Trace. Propagate W3C TraceContext headers across all service-to-service calls. correlationId in every log line.</p>
+    </div>
+    <div class="card infra">
+      <div class="card-icon">📋</div>
+      <h3>Logging</h3>
+      <p>Logback JSON encoder. No PII in logs. Request ID in MDC. Sensitive fields masked (passwords, tokens, card numbers) via custom serialiser.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+<script>
+// Active nav highlight on scroll
+const sections = document.querySelectorAll('section[id]');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navItems.forEach(item => item.classList.remove('active'));
+      const activeItem = document.querySelector(`.nav-item[href="#${entry.target.id}"]`);
+      if (activeItem) activeItem.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
