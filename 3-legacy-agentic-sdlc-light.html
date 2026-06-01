@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legacy → Agentic SDLC: Production Codebase Onboarding Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #f8f9fc;
+    --white:   #ffffff;
+    --s2:      #f1f4f9;
+    --s3:      #e8edf5;
+    --bd:      #d0d9e8;
+    --bd2:     #b8c6dc;
+    --c1:      #0077cc;   /* blue */
+    --c2:      #6d3fc7;   /* purple */
+    --c3:      #0e9e5c;   /* green */
+    --c4:      #d4600a;   /* orange */
+    --c5:      #c0392b;   /* red */
+    --c6:      #a07800;   /* amber */
+    --c7:      #0891b2;   /* teal */
+    --tx:      #1a2640;
+    --tm:      #3f5270;
+    --td:      #6b82a0;
+    --shadow:  0 1px 4px rgba(0,40,100,0.08), 0 4px 16px rgba(0,40,100,0.06);
+    --shadow2: 0 2px 8px rgba(0,40,100,0.10), 0 8px 24px rgba(0,40,100,0.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-size:14px;line-height:1.75}
+
+  /* HERO */
+  .hero{padding:52px 44px 44px;background:linear-gradient(150deg,#0c1e3a 0%,#153260 50%,#0c2448 100%);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-80px;right:-80px;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 65%);pointer-events:none}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7ab8f5;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .eyebrow::before{content:'';width:28px;height:1px;background:#7ab8f5}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,40px);font-weight:800;line-height:1.12;margin-bottom:14px;color:#ffffff}
+  .hero h1 .a{color:#ff8c61}
+  .hero h1 .b{color:#5bc8f5}
+  .hero p{color:#a8c4e0;font-size:15px;max-width:680px;margin-bottom:24px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.07)}
+
+  /* NAV */
+  .nav{background:var(--white);border-bottom:1px solid var(--bd);padding:0 44px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,40,100,0.07)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{padding:13px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+  .nav a:hover{color:var(--c1);border-bottom-color:var(--c1)}
+
+  /* WRAP */
+  .wrap{max-width:1100px;margin:0 auto;padding:44px 44px 100px}
+
+  /* SECTION */
+  .sec{margin-bottom:56px;scroll-margin-top:60px}
+  .sh{display:flex;align-items:flex-start;gap:16px;margin-bottom:26px}
+  .si{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:var(--shadow)}
+  .st-h{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--tx)}
+  .ss{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);margin-top:4px}
+
+  /* CARDS */
+  .card{background:var(--white);border:1px solid var(--bd);border-radius:14px;padding:24px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .ch{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:13px;display:flex;align-items:center;gap:9px}
+  .ch .ico{font-size:17px}
+
+  /* CODE */
+  pre{background:#1e2d45;border:1px solid #2a3f5e;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;margin:10px 0;color:#c8daf0}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(0,119,204,0.08);border:1px solid rgba(0,119,204,0.18);border-radius:4px;padding:1px 6px;color:var(--c1)}
+  .cm{color:#4a7a4e} .kw{color:#c792ea} .st2{color:#98d687} .fn{color:#79b8ff} .nm{color:#ffcb6b}
+
+  /* PHASE RIBBON */
+  .ribbon{display:flex;overflow-x:auto;gap:0;margin-bottom:26px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;scrollbar-width:none;box-shadow:var(--shadow)}
+  .ribbon::-webkit-scrollbar{display:none}
+  .rb{flex:1;min-width:130px;padding:14px 16px;border-right:1px solid var(--bd);background:var(--white)}
+  .rb:last-child{border-right:none}
+  .rb:hover{background:var(--s2)}
+  .rb-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--td);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+  .rb-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+  .rb-d{font-size:11px;color:var(--tm);margin-top:2px}
+
+  /* STEPS */
+  .steps{list-style:none}
+  .step{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--s3)}
+  .step:last-child{border-bottom:none}
+  .sn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+  .sc strong{display:block;color:var(--tx);margin-bottom:3px;font-size:13px;font-weight:600}
+  .sc p{color:var(--tm);font-size:12.5px}
+
+  /* GRIDS */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 14px;background:var(--s2);color:var(--td);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:left;border-bottom:2px solid var(--bd)}
+  td{padding:10px 14px;border-bottom:1px solid var(--s3);vertical-align:top;color:var(--tm)}
+  td strong{color:var(--tx)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--s2)}
+
+  /* ALERTS */
+  .alert{border-radius:10px;padding:14px 18px;margin:14px 0;font-size:13px;display:flex;gap:11px;align-items:flex-start}
+  .al-sky{background:#e8f4ff;border:1px solid #b3d4f5;color:#0a4a7a}
+  .al-amber{background:#fff7e6;border:1px solid #f5c97a;color:#7a4a00}
+  .al-red{background:#fff0ef;border:1px solid #f5a9a4;color:#7a1a14}
+  .al-green{background:#edfaf3;border:1px solid #86d9b2;color:#0a5c35}
+  .al-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+  .alert strong{font-weight:600}
+
+  /* HIGHLIGHT BOX */
+  .hbox{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:18px 20px;margin:4px 0}
+  .hb-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px}
+
+  /* TAGS */
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 9px;border-radius:20px;border:1px solid}
+
+  /* DIVIDER */
+  hr{border:none;border-top:1px solid var(--bd);margin:36px 0}
+
+  ul.bl{padding-left:18px}
+  ul.bl li{margin-bottom:7px;color:var(--tm);font-size:13px}
+  ul.bl li strong{color:var(--tx);font-weight:600}
+
+  /* FLOW BOXES */
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--s2);border-radius:10px;padding:18px 20px;border:1px solid var(--bd)}
+  .fn2{background:var(--white);border:1px solid var(--bd);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--tx);font-family:'JetBrains Mono',monospace;box-shadow:var(--shadow)}
+  .fa{color:var(--td);font-size:14px}
+
+  /* SECTION COLOR THEMING */
+  .p-orange .si{background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097}
+  .p-sky .si{background:linear-gradient(135deg,#e8f4ff,#c8e4fa);border:1px solid #93c5e8}
+  .p-violet .si{background:linear-gradient(135deg,#f0eaff,#ddd0f8);border:1px solid #b89de8}
+  .p-green .si{background:linear-gradient(135deg,#eafaf2,#c8f0da);border:1px solid #7dca9e}
+  .p-yellow .si{background:linear-gradient(135deg,#fffbe8,#fff0b8);border:1px solid #e8d068}
+  .p-teal .si{background:linear-gradient(135deg,#e6f7f9,#c0ecf2);border:1px solid #7dd4e0}
+  .p-red .si{background:linear-gradient(135deg,#fff0ef,#fdd8d6);border:1px solid #f0a09a}
+
+  /* FINAL BOX */
+  .final-box{background:linear-gradient(135deg,#0c1e3a,#163566);border-radius:14px;padding:28px;color:white;margin-top:8px}
+  .final-box pre{background:#0a1828;border-color:#2a4060;color:#a8c8e8}
+  .final-box .fb-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px;color:#ffffff}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">Legacy Codebase · Agentic SDLC Retrofit · Production-Safe</div>
+  <h1>5–8 Year-Old <span class="a">Legacy</span> Code<br>→ <span class="b">Autonomous SDLC</span></h1>
+  <p>Full prework guide: scan existing microservices, train Claude on your codebase, generate stories from real code, fix legacy code + tests, add Playwright E2E — all the way to deployment. Zero greenfield assumptions.</p>
+  <div class="chips">
+    <span class="chip">⚠️ Phase 0: Prework (most important)</span>
+    <span class="chip">🔍 Code Archaeology</span>
+    <span class="chip">🧠 Train Claude on YOUR code</span>
+    <span class="chip">📝 Legacy → Stories</span>
+    <span class="chip">🎭 Playwright UI + API + Customer API</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#mindset">Mindset Shift</a>
+  <a href="#prework">Prework Map</a>
+  <a href="#phase0">P0 · Code Scan</a>
+  <a href="#phase1">P1 · Train Claude</a>
+  <a href="#phase2">P2 · Story Gen</a>
+  <a href="#phase3">P3 · Legacy Fixes</a>
+  <a href="#phase4">P4 · Tests</a>
+  <a href="#phase5">P5 · Playwright E2E</a>
+  <a href="#phase6">P6 · Deploy</a>
+  <a href="#prompts">Prompt Library</a>
+  <a href="#checklist">Checklist</a>
+</nav>
+
+<div class="wrap">
+
+<!-- MINDSET -->
+<section class="sec p-orange" id="mindset">
+  <div class="sh">
+    <div class="si">🔄</div>
+    <div>
+      <div class="st-h">The Fundamental Difference</div>
+      <div class="ss">New app vs legacy retrofit — completely different starting point</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ico">🌱</span> Greenfield (Previous Guide)</div>
+      <ul class="bl">
+        <li>Start from Epic → generate everything</li>
+        <li>Claude invents architecture fresh</li>
+        <li>No existing code conflicts</li>
+        <li>Clean test baseline (zero tests)</li>
+        <li>No production risk</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ico">🏚</span> Legacy Retrofit (This Guide)</div>
+      <ul class="bl">
+        <li><strong>Start from CODE → derive stories</strong></li>
+        <li>Claude must learn YOUR architecture first</li>
+        <li>Existing patterns must be respected</li>
+        <li>Legacy tests may be broken, absent, or wrong</li>
+        <li>Every change risks breaking production</li>
+        <li><strong>Customer integrations = extra risk surface</strong></li>
+      </ul>
+    </div>
+  </div>
+  <div class="alert al-amber">
+    <span class="al-ico">⚠️</span>
+    <div><strong>Core Rule for Legacy:</strong> Claude must READ before it WRITES. The entire prework phase creates a comprehensive knowledge base so agents understand your codebase's patterns, antipatterns, dependencies, and business logic before generating a single story or touching a single file.</div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🗺</span> How Legacy SDLC Flow Differs</div>
+    <pre><span class="cm">GREENFIELD:  Epic → Stories → Architecture → Code → Tests → Deploy
+
+LEGACY:      Code Scan → Knowledge Base → Stories ← Code
+                  ↓
+             Gap Analysis (what's missing / broken)
+                  ↓
+             Legacy Fix Plan → Implement Fixes → Fix Tests
+                  ↓
+             New Feature Stories → Implement → New Tests
+                  ↓
+             E2E Playwright (UI + API + Customer API)
+                  ↓
+             Deploy (with rollback plan — always)</span></pre>
+  </div>
+</section>
+
+<!-- PREWORK MAP -->
+<section class="sec p-orange" id="prework">
+  <div class="sh">
+    <div class="si">📋</div>
+    <div>
+      <div class="st-h">Prework Map — What to Do Before Any Agent Runs</div>
+      <div class="ss">This phase is 70% of the work. Do it right and everything else follows.</div>
+    </div>
+  </div>
+  <div class="ribbon">
+    <div class="rb"><div class="rb-n">Step 1</div><div class="rb-t" style="color:var(--c4)">Inventory</div><div class="rb-d">List all services</div></div>
+    <div class="rb"><div class="rb-n">Step 2</div><div class="rb-t" style="color:var(--c1)">Code Scan</div><div class="rb-d">Claude reads code</div></div>
+    <div class="rb"><div class="rb-n">Step 3</div><div class="rb-t" style="color:var(--c2)">Write Docs</div><div class="rb-d">CLAUDE.md per service</div></div>
+    <div class="rb"><div class="rb-n">Step 4</div><div class="rb-t" style="color:var(--c3)">Gap Analysis</div><div class="rb-d">What's missing/broken</div></div>
+    <div class="rb"><div class="rb-n">Step 5</div><div class="rb-t" style="color:var(--c6)">Risk Map</div><div class="rb-d">What can break prod</div></div>
+    <div class="rb"><div class="rb-n">Step 6</div><div class="rb-t" style="color:var(--c7)">Stories</div><div class="rb-d">From code analysis</div></div>
+  </div>
+  <div class="alert al-sky">
+    <span class="al-ico">⏱</span>
+    <div><strong>Time budget:</strong> For 8–10 microservices, 5–8 years old — expect 2–3 days of prework. This is not optional overhead. It's the difference between an agent that understands your system and one that rewrites it incorrectly.</div>
+  </div>
+</section>
+
+<!-- PHASE 0: CODE SCAN -->
+<section class="sec p-sky" id="phase0">
+  <div class="sh">
+    <div class="si">🔍</div>
+    <div>
+      <div class="st-h">Phase 0 — Code Archaeology (The Most Critical Phase)</div>
+      <div class="ss">Using Claude Code to systematically understand existing code before touching it</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📂</span> Step 0.1 — Service Inventory Scan</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:12px;">Run this first. One Claude Code session per service. READ ONLY — no modifications.</p>
+    <pre><span class="cm"># For EACH service, open Claude Code and paste this prompt:</span>
+<span class="cm"># cd /path/to/your/user-service  →  claude</span>
+
+<span class="st2">You are performing code archaeology on a production microservice
+that has been running for 5-8 years. DO NOT modify any files. READ ONLY.
+
+Analyze this entire codebase and produce SERVICE_PROFILE.md with:
+
+## 1. SERVICE IDENTITY
+- Service name, purpose, business domain
+- Framework versions, Java version
+
+## 2. TECHNOLOGY STACK
+- All pom.xml dependencies with versions
+- Database type, connection pool settings
+- External APIs this service calls (URLs, auth patterns)
+- Message queues / event topics used
+
+## 3. API SURFACE
+List EVERY endpoint:
+- HTTP method + path + request/response shape
+- Auth required? Which external consumers call this?
+
+## 4. DATA MODEL
+- All @Entity classes with fields
+- DB relationships, raw SQL queries
+- Flyway/Liquibase migrations present?
+
+## 5. TEST STATE
+- Test class count vs production class count
+- JUnit 4 or JUnit 5?
+- Are tests currently passing? (mvn test -q output)
+- TestContainers or H2?
+
+## 6. CODE HEALTH SIGNALS
+- Deprecated Spring features
+- Known antipatterns (N+1 queries, missing null checks)
+- TODO/FIXME count and themes
+- Security red flags (hardcoded credentials, SQL concat)
+
+## 7. INTEGRATION POINTS — CRITICAL
+- Which other internal services does this call?
+- Does it expose APIs consumed by CUSTOMER applications?
+- Any webhooks or callbacks to external systems?
+
+Output as SERVICE_PROFILE.md. Be specific. Quote actual class names.</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🔗</span> Step 0.2 — Cross-Service Dependency Map</div>
+    <pre><span class="st2">After scanning all services, cross-reference all SERVICE_PROFILE.md files
+and produce DEPENDENCY_MAP.md:
+
+## 1. SERVICE DEPENDENCY GRAPH
+For each service:
+- Services it calls (RestTemplate, Feign, WebClient configs)
+- Services that call IT
+- Topics it publishes → who consumes
+- Topics it consumes → who publishes
+- Shared databases (multiple services = danger zone)
+
+## 2. CUSTOMER API SURFACE
+Every endpoint flagged as customer-facing:
+- Exact URL patterns + auth mechanism customers use
+- Breaking change risk level (HIGH / MED / LOW)
+
+## 3. CRITICAL PATHS
+Trace call chains for core business flows:
+- User login → session creation
+- Order creation → fulfillment
+
+## 4. DANGER ZONES
+Services where a change is HIGH RISK:
+- Customer-facing with no contract tests
+- Shared DB tables
+- Synchronous call chains (A→B→C→D, any failure cascades)
+- No circuit breaker on critical calls</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🧪</span> Step 0.3 — Test Health Scan</div>
+    <pre><span class="st2">For EACH service, produce TEST_HEALTH.md:
+
+## Test Inventory
+- Total test classes vs production classes (coverage estimate %)
+- JUnit 4 vs 5 (critical — they cannot mix without config)
+- Tests using @Ignore or @Disabled (dead tests — why?)
+
+## Test Quality Issues
+- Tests with NO assertions (always green = useless)
+- Copy-pasted test blocks (brittle, wrong DRY)
+- Tests tied to specific data (break in new environments)
+- Time-dependent tests (Thread.sleep, hardcoded dates)
+
+## What Has ZERO Tests
+List every controller, service class with zero test coverage.
+
+## Tests That Currently FAIL
+Run: mvn test -pl {service} 2>&1 | grep -E "FAIL|ERROR"
+List all failing tests with error messages.
+
+## Modernization Plan
+- JUnit 4 → JUnit 5 migration scope
+- H2 vs TestContainers candidates</span></pre>
+  </div>
+</section>
+
+<!-- PHASE 1: TRAIN CLAUDE -->
+<section class="sec p-violet" id="phase1">
+  <div class="sh">
+    <div class="si">🧠</div>
+    <div>
+      <div class="st-h">Phase 1 — Training Claude on Your Codebase</div>
+      <div class="ss">Build the knowledge base that makes every downstream agent accurate</div>
+    </div>
+  </div>
+  <div class="alert al-sky">
+    <span class="al-ico">💡</span>
+    <div><strong>Key Concept:</strong> Claude has no persistent memory between sessions. "Training Claude" means creating well-structured files that any Claude session reads at the start. The quality of these files determines the quality of every story, fix, and test generated. Bad docs = bad agents.</div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📄</span> File 1: Root CLAUDE.md — The Master Context</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:10px;">Claude Code reads this file automatically on every session start. Most important file in the repo.</p>
+    <pre><span class="cm"># CLAUDE.md — Master Context (auto-read by Claude Code)</span>
+
+<span class="st2">## CRITICAL RULES — READ BEFORE ANY ACTION
+1. NEVER modify customer-facing APIs without explicit human approval
+2. NEVER change shared DB schema without a migration plan
+3. ALWAYS check DEPENDENCY_MAP.md before touching any shared service
+4. NEVER remove @Deprecated methods — customers may use them
+5. All new code MUST follow existing patterns in that service
+6. Run existing tests BEFORE and AFTER any change. Zero regressions.
+
+## SERVICES MAP
+| Service           | Port | Java | Spring Boot | DB         | Customer-facing?          |
+|-------------------|------|------|-------------|------------|--------------------------|
+| user-service      | 8081 | 11   | 2.7.x       | PostgreSQL | YES — /api/v1/users       |
+| order-service     | 8082 | 11   | 2.5.x       | MySQL      | YES — /api/v2/orders      |
+| inventory-service | 8083 | 8    | 2.3.x       | PostgreSQL | NO                        |
+
+## EXISTING PATTERNS (MUST FOLLOW — do not deviate)
+### Exception Handling
+- All services use GlobalExceptionHandler extends ResponseEntityExceptionHandler
+- Error format: { "code": "ERR_001", "message": "...", "timestamp": "..." }
+
+### Authentication
+- JWT from auth-service, validated by JwtAuthFilter in each service
+- Token contains: userId, roles[], sessionId, exp
+- Public endpoints annotated @PublicEndpoint (custom annotation)
+
+### Testing Pattern (CRITICAL)
+- JUnit 4 in most services — do NOT use JUnit 5 syntax without confirming
+- Mockito for unit tests, Spring Boot Test for integration tests
+- H2 in-memory (no TestContainers yet)
+- Base classes: BaseServiceTest, BaseControllerTest
+
+## CUSTOMER API CONTRACTS (DO NOT BREAK)
+- /api/v1/users/**   → [CustomerA] uses these in production
+- /api/v2/orders/**  → [CustomerB] has SLA on these
+See: docs/customer-contracts/ for full specs.</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📄</span> File 2: Per-Service CLAUDE.md — Service-Specific Truth</div>
+    <pre><span class="cm"># user-service/CLAUDE.md</span>
+
+<span class="st2">## SERVICE: user-service
+Age: ~7 years | Customer-facing: YES — treat with extreme care
+
+## THIS SERVICE'S QUIRKS
+- pom.xml has -source 8 / -target 8 flag — DO NOT CHANGE (breaks build)
+- UserRepository has TWO implementations: JPA + legacy JDBC fallback
+  JDBC version used for bulk ops — do not remove
+- RoleEnum has 3 legacy roles (SUPER_ADMIN, LEGACY_USER, TEMP_USER)
+  not shown in UI but still in DB — do not remove
+
+## CURRENT KNOWN ISSUES (check before assuming something is a bug)
+- UserController.searchUsers() has known N+1 query (JIRA UMS-3102)
+- Token refresh occasionally 500s under high load (race condition UMS-3201)
+
+## TEST STATE
+- 47% line coverage (measured 2023)
+- UserServiceTest.java: 3 @Ignored tests with no explanation
+- Auth tests depend on hardcoded test user id=1 — do not delete from H2
+
+## SAFE ZONES (normal care)
+- New additive endpoints | UserPreferences entity | Audit logging
+
+## DANGER ZONES (needs human approval)
+- UserRepository.findByEmail() — called by 4 other services
+- JWT token structure — any field change breaks ALL consumers
+- /api/v1/users/{id} DELETE — customers have contractual notice requirements</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📄</span> File 3: DOMAIN_GLOSSARY.md — Teach Claude Your Business Language</div>
+    <pre><span class="st2">## DOMAIN GLOSSARY (use these exact terms in stories and code)
+
+User:      registered person in system. Has roles.
+Customer:  EXTERNAL COMPANY that integrates with our APIs (not end-user)
+Merchant:  type of User who can create orders
+Order:     a transaction REQUEST — NOT the same as Purchase
+Purchase:  a completed, paid Order. Different lifecycle.
+SKU:       unit of inventory. Format: [CATEGORY]-[ID]-[VARIANT]
+
+## BUSINESS RULES AGENTS MUST KNOW
+- Orders cannot be cancelled after status=SHIPPED
+- User deactivation requires 30-day notice if user has active Orders
+- Inventory reservation happens at Order CONFIRMED, not CREATED
+- Customer API calls must complete in &lt;200ms (contractual SLA)
+- All PII fields (email, phone, address) are encrypted at rest
+
+## WHAT THIS SYSTEM IS NOT
+- Not a payment processor (no financial transactions in code)
+- Not a customer-facing storefront (B2B only)
+- Not real-time inventory (15-min sync lag is acceptable)</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🎯</span> Definition of Done: "Claude is Trained"</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:12px;">Test Claude with these questions. If all answered correctly without you explaining anything — training is complete:</p>
+    <ol class="steps">
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">1</div><div class="sc"><strong>"What happens if I change UserRepository.findByEmail()?"</strong><p>Expected: lists all 4 downstream callers, flags customer risk, suggests approach</p></div></li>
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">2</div><div class="sc"><strong>"Write a test for UserService.createUser() following our patterns"</strong><p>Expected: JUnit 4 style, correct base class, H2, naming matches existing tests exactly</p></div></li>
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">3</div><div class="sc"><strong>"Is it safe to add a 'nickname' field to the User entity?"</strong><p>Expected: checks customer API contract, migration needed, shared library impact</p></div></li>
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">4</div><div class="sc"><strong>"Create a story for adding order filtering by date range"</strong><p>Expected: references existing filter patterns, flags no schema change needed, correct SP estimate</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- PHASE 2: STORY GEN FROM CODE -->
+<section class="sec p-green" id="phase2">
+  <div class="sh">
+    <div class="si">📝</div>
+    <div>
+      <div class="st-h">Phase 2 — Story Generation FROM Code</div>
+      <div class="ss">Reverse-engineering what code does into stories + gap stories for what it should do</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🔄</span> Two Types of Stories for Legacy Systems</div>
+    <div class="g2">
+      <div class="hbox">
+        <div class="hb-t" style="color:var(--c3)">Type A — Reverse Stories</div>
+        <p style="color:var(--tm);font-size:13px;">Document what code CURRENTLY does. Become source of truth for preserved behavior. Used as regression protection baseline.</p>
+        <div class="tags"><span class="tag" style="color:var(--c3);border-color:rgba(14,158,92,0.3)">derived from code</span><span class="tag" style="color:var(--c3);border-color:rgba(14,158,92,0.3)">no new dev needed</span></div>
+      </div>
+      <div class="hbox">
+        <div class="hb-t" style="color:var(--c1)">Type B — Gap Stories</div>
+        <p style="color:var(--tm);font-size:13px;">What system SHOULD do but doesn't. Missing tests, broken edge cases, absent features, legacy code needing modernization.</p>
+        <div class="tags"><span class="tag" style="color:var(--c1);border-color:rgba(0,119,204,0.3)">requires dev work</span><span class="tag" style="color:var(--c1);border-color:rgba(0,119,204,0.3)">sprint-planned</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🤖</span> Story Agent Prompt — Legacy Mode</div>
+    <pre><span class="st2">You are a Product Owner analyzing an EXISTING production service.
+
+Read these files first (in order):
+1. CLAUDE.md (root) — critical rules and patterns
+2. {service}/CLAUDE.md — service-specific quirks
+3. {service}/SERVICE_PROFILE.md — what was found in code scan
+4. {service}/TEST_HEALTH.md — current test state
+5. DOMAIN_GLOSSARY.md — business terms
+
+Then produce TWO story sets:
+
+## PART A: REVERSE STORIES (existing behavior)
+For each controller endpoint / major service method:
+  Title: [Existing] {feature name}
+  User Story: As a {actor}, I can {action} so that {business purpose}
+  Current Implementation: {class + method}
+  Acceptance Criteria: Given/When/Then matching EXISTING code behavior
+  Story Points: [based on complexity of existing code]
+  Risk Level: HIGH / MED / LOW
+
+## PART B: GAP STORIES (missing/broken)
+Look for:
+- Endpoints with no tests → "Add test coverage for X"
+- TODO/FIXME clusters → story per related cluster
+- Missing validation → "Add input validation for X"
+- Broken tests in TEST_HEALTH.md → "Fix failing tests for X"
+- Deprecated deps with CVEs → "Upgrade {lib} to {version}"
+
+Gap story format:
+  Title: [Fix] or [Add] or [Upgrade] {specific thing}
+  Story Points: effort to fix (not original effort)
+  Priority: P1 (blocking/security) / P2 (quality) / P3 (tech debt)
+  Risk: what breaks if this goes wrong?
+
+## OUTPUT
+Sort by service → risk (HIGH first)
+Flag dependencies between stories
+Total story points per service
+Highlight P1 gaps that need immediate sprint planning</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📊</span> Expected Output Example</div>
+    <pre><span class="cm">## user-service Stories</span>
+
+<span class="st2">### TYPE A — Reverse Stories (existing behavior)
+US-E001  [Existing] User Login with JWT            5pt  RISK:HIGH
+US-E002  [Existing] Create User (Admin only)        3pt  RISK:HIGH
+US-E003  [Existing] List Users with Pagination      3pt  RISK:HIGH
+US-E004  [Existing] Update User Profile             3pt  RISK:MED
+US-E005  [Existing] Deactivate User (30-day rule)   5pt  RISK:HIGH
+US-E006  [Existing] Legacy Bulk User Import JDBC    8pt  RISK:MED
+
+### TYPE B — Gap Stories (missing/broken)
+US-G001  [Fix] 3 failing tests in UserServiceTest   2pt  P1 ← do FIRST
+US-G002  [Add] Input validation on POST /users       3pt  P1 (security)
+US-G003  [Fix] N+1 query in searchUsers (UMS-3102)  5pt  P2
+US-G004  [Add] Integration tests for bulk import     5pt  P2
+US-G005  [Add] Unit tests for UserPreferences        2pt  P3
+US-G006  [Upgrade] Spring Boot 2.7.x → 3.2.x       13pt  P2 (careful)
+
+DEPENDENCY ORDER: P1 gaps → new features → upgrades last</span></pre>
+  </div>
+</section>
+
+<!-- PHASE 3: LEGACY FIXES -->
+<section class="sec p-yellow" id="phase3">
+  <div class="sh">
+    <div class="si">🔧</div>
+    <div>
+      <div class="st-h">Phase 3 — Legacy Code Fixes</div>
+      <div class="ss">Safe approach to correcting legacy code without breaking production</div>
+    </div>
+  </div>
+  <div class="alert al-red">
+    <span class="al-ico">🚨</span>
+    <div><strong>Production Safety Rule:</strong> Every legacy fix MUST follow this order — (1) Write a test capturing current behavior FIRST, (2) verify test passes against current code, (3) make the fix, (4) verify same test still passes. Never fix without a test anchor. The test is your safety net.</div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🤖</span> Dev Agent Prompt — Legacy Fix Mode</div>
+    <pre><span class="st2">You are modifying a PRODUCTION service running for years.
+Every change is potentially breaking something a customer depends on.
+
+## RULES FOR LEGACY CODE:
+1. READ service CLAUDE.md first. Know the danger zones.
+2. Before fixing ANYTHING, write a test capturing CURRENT behavior.
+   Run it. It must pass. This is your safety anchor.
+3. Make the MINIMAL change to fix the issue. No refactoring while fixing.
+4. After fix, run ALL existing tests. Zero new failures allowed.
+5. If a test was @Ignored with no explanation, do NOT re-enable it.
+   Add comment: // RE-ENABLE PENDING: investigate why disabled
+6. If you find new issues while fixing, do NOT fix them now.
+   Add // FOUND: {description} comment. Create a gap story.
+
+## APPROACH BY FIX TYPE:
+
+### N+1 Queries
+- Add @EntityGraph or JOIN FETCH
+- Write before/after query count assertion
+- Check if result order changes
+
+### Missing Input Validation
+- Use existing validation style (check what other fields use)
+- Add to DTO Request object, NOT controller
+- Return existing error format (check GlobalExceptionHandler)
+
+### Upgrading Dependencies
+- One dependency at a time
+- Run full test suite after each upgrade
+- Spring Boot major version = dedicated sprint + QA sign-off</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📋</span> Legacy Fix Priority Matrix</div>
+    <table>
+      <tr><th>Fix Type</th><th>When</th><th>Why</th><th>Risk</th></tr>
+      <tr><td><strong>Failing tests</strong></td><td>Sprint 0</td><td>Can't build on broken baseline</td><td>LOW (no prod change)</td></tr>
+      <tr><td><strong>Security gaps (no input validation)</strong></td><td>Sprint 0</td><td>Customer-facing = injection risk</td><td>MED (behavior change)</td></tr>
+      <tr><td><strong>NPE / crash bugs</strong></td><td>Sprint 0</td><td>Active reliability risk</td><td>MED</td></tr>
+      <tr><td><strong>N+1 queries</strong></td><td>Sprint 2</td><td>Performance, not blocking</td><td>MED (check ordering)</td></tr>
+      <tr><td><strong>Test coverage gaps</strong></td><td>Sprint 2</td><td>Foundation for safe changes</td><td>LOW</td></tr>
+      <tr><td><strong>Dead code removal</strong></td><td>Sprint 3+</td><td>Needs customer confirmation</td><td>HIGH if customer uses it</td></tr>
+      <tr><td><strong>Framework upgrades</strong></td><td>Dedicated sprint</td><td>Full regression cycle required</td><td>HIGH — never bundle</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- PHASE 4: TESTS -->
+<section class="sec p-teal" id="phase4">
+  <div class="sh">
+    <div class="si">🧪</div>
+    <div>
+      <div class="st-h">Phase 4 — Test Modernization & Coverage</div>
+      <div class="ss">Fix existing tests, fill gaps, migrate JUnit 4 → 5 where safe</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🤖</span> Test Agent Prompt — Legacy Mode</div>
+    <pre><span class="st2">You are a Test Engineer on a legacy production codebase.
+Improve test coverage without breaking existing tests.
+
+## RULES FOR LEGACY TESTS:
+1. Check JUnit version (pom.xml). JUnit 4 and 5 CANNOT mix without config.
+   Use the SAME version as existing tests in that service.
+2. Use the same base test class if one exists (BaseServiceTest, BaseControllerTest)
+3. Follow naming pattern: {Class}Test.java in same package as production class
+4. H2 or TestContainers — use whatever that service already uses
+
+## TEST WRITING ORDER:
+P1: Tests for code with ZERO coverage that customer APIs call
+P2: Tests for business logic in Service classes
+P3: Tests for every error/exception path (often 0% covered)
+P4: Tests for edge cases mentioned in FIXME/TODO comments
+
+## FOR EACH NEW TEST FILE:
+1. Read the production class FULLY before writing one line of test
+2. List all methods → what each does
+3. List scenarios: happy path + each error path + each edge case
+4. Write tests: happy paths first, then errors, then edge cases
+5. Run: mvn test -pl {service} -Dtest={ClassName}Test -q
+6. Report: pass/fail + coverage delta
+
+## DO NOT:
+- Do NOT test Spring Boot framework behavior (that's tested upstream)
+- Do NOT write tests that only call getters/setters
+- Do NOT use Thread.sleep() — use Awaitility if async
+- Do NOT write tests requiring real network access</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📊</span> Coverage Target by Service Type</div>
+    <table>
+      <tr><th>Service State</th><th>Sprint 1–2 Target</th><th>3-Month Target</th></tr>
+      <tr><td><strong>Critical path, customer-facing</strong></td><td>60%</td><td>80%</td></tr>
+      <tr><td><strong>Internal service, stable</strong></td><td>50%</td><td>70%</td></tr>
+      <tr><td><strong>Async/messaging service</strong></td><td>40%</td><td>65%</td></tr>
+      <tr><td><strong>Legacy, no changes planned</strong></td><td>Document existing</td><td>No regression</td></tr>
+    </table>
+    <div class="alert al-amber" style="margin-top:12px;">
+      <span class="al-ico">💡</span>
+      <div>Don't chase 100%. Coverage debt built over 7 years won't be fixed in one sprint. Focus on customer-critical paths first, then expand outward systematically.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PHASE 5: PLAYWRIGHT -->
+<section class="sec p-sky" id="phase5">
+  <div class="sh">
+    <div class="si">🎭</div>
+    <div>
+      <div class="st-h">Phase 5 — Playwright E2E: UI + API + Customer API</div>
+      <div class="ss">Three test layers required for a system with customer integrations</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🗂</span> Three Playwright Test Layers</div>
+    <div class="g3">
+      <div class="hbox">
+        <div class="hb-t" style="color:var(--c1)">Layer 1 — UI Tests</div>
+        <p style="color:var(--tm);font-size:12.5px;">Browser-based tests against React/Angular UI. User journeys: login, navigate, create orders, manage users.</p>
+        <div class="tags"><span class="tag" style="color:var(--c1);border-color:rgba(0,119,204,0.3)">@ui</span><span class="tag" style="color:var(--c1);border-color:rgba(0,119,204,0.3)">Page Object pattern</span></div>
+      </div>
+      <div class="hbox">
+        <div class="hb-t" style="color:var(--c3)">Layer 2 — Internal API</div>
+        <p style="color:var(--tm);font-size:12.5px;">HTTP tests against REST APIs directly. All endpoints, all verbs, auth flows, error codes. Fast, no browser.</p>
+        <div class="tags"><span class="tag" style="color:var(--c3);border-color:rgba(14,158,92,0.3)">@api</span><span class="tag" style="color:var(--c3);border-color:rgba(14,158,92,0.3)">request() fixture</span></div>
+      </div>
+      <div class="hbox">
+        <div class="hb-t" style="color:var(--c5)">Layer 3 — Customer Contracts</div>
+        <p style="color:var(--tm);font-size:12.5px;">Simulate exactly what customer applications do. Their tokens, their endpoints. <strong>Most critical layer.</strong></p>
+        <div class="tags"><span class="tag" style="color:var(--c5);border-color:rgba(192,57,43,0.3)">@contract</span><span class="tag" style="color:var(--c5);border-color:rgba(192,57,43,0.3)">gates every deploy</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🤖</span> Playwright Agent Prompt — Legacy System</div>
+    <pre><span class="st2">You are building Playwright tests for a legacy system with customer API integrations.
+
+Read before writing any test:
+- CLAUDE.md customer API contracts section
+- DEPENDENCY_MAP.md customer API surface
+- Any existing /e2e tests (match their style)
+
+## FOLDER STRUCTURE:
+/e2e
+  /ui-tests        ← browser tests (Page Object pattern)
+    /pages         ← page object classes
+    /tests         ← test specs
+  /api-tests
+    /internal      ← internal API tests
+    /customer      ← customer contract tests
+  /fixtures        ← shared test data, auth tokens
+  playwright.config.ts
+
+## LAYER 1: UI TESTS — Page Object Model
+class LoginPage {
+  async goto() { await this.page.goto('/login') }
+  async login(email, password) { ... }
+  async assertLoggedIn(role) { ... }
+}
+
+test('Admin creates new customer user', async ({ page }) => {
+  await loginPage.login(ADMIN_CREDS)
+  await userMgmtPage.openCreateModal()
+  await userMgmtPage.fillUserForm(testUser)
+  await userMgmtPage.submit()
+  await expect(page.getByText(testUser.email)).toBeVisible()
+})
+
+## LAYER 2: INTERNAL API TESTS
+test('POST /api/v1/users - create user', async ({ request }) => {
+  const res = await request.post('/api/v1/users', {
+    headers: { Authorization: `Bearer ${adminToken}` },
+    data: { email: 'test@test.com', role: 'CUSTOMER' }
+  })
+  expect(res.status()).toBe(201)
+  const body = await res.json()
+  expect(body).toMatchObject({ id: expect.any(String), email: 'test@test.com' })
+})
+
+## LAYER 3: CUSTOMER CONTRACT TESTS — MOST CRITICAL
+test('CustomerA contract: GET /api/v1/users/{id}', async ({ request }) => {
+  const res = await request.get(`/api/v1/users/${KNOWN_USER_ID}`, {
+    headers: { 'X-API-Key': CUSTOMER_A_API_KEY }  // their auth method
+  })
+  expect(res.status()).toBe(200)
+  const body = await res.json()
+  // Assert CONTRACTED fields only — additions OK, removals = breaking
+  expect(body).toHaveProperty('id')
+  expect(body).toHaveProperty('email')
+  expect(body).toHaveProperty('status')
+})
+
+## TEST DATA RULES
+- Never use hardcoded production data
+- Clean up after each test (afterEach teardown)
+- Tag tests: @smoke (5min), @regression (30min), @contract (10min)</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🚦</span> Test Run Strategy — When Each Suite Runs</div>
+    <table>
+      <tr><th>Suite</th><th>Tag</th><th>When</th><th>Duration</th><th>Blocks Deploy?</th></tr>
+      <tr><td><strong>Smoke</strong></td><td><code>@smoke</code></td><td>Every PR + post-deploy</td><td>~5 min</td><td><strong>YES</strong></td></tr>
+      <tr><td><strong>Customer Contracts</strong></td><td><code>@contract</code></td><td>Every PR to main</td><td>~10 min</td><td><strong>YES — P0</strong></td></tr>
+      <tr><td><strong>Full Regression UI</strong></td><td><code>@regression</code></td><td>Nightly + before release</td><td>~30 min</td><td>YES (release gate)</td></tr>
+      <tr><td><strong>Full API Suite</strong></td><td><code>@api</code></td><td>Every PR</td><td>~15 min</td><td><strong>YES</strong></td></tr>
+    </table>
+    <div class="alert al-red" style="margin-top:12px;">
+      <span class="al-ico">🚨</span>
+      <div><strong>Customer contract tests must gate every deployment.</strong> A broken contract test = customer's production application broken. No exceptions on this gate, ever.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PHASE 6: DEPLOY -->
+<section class="sec p-red" id="phase6">
+  <div class="sh">
+    <div class="si">🚀</div>
+    <div>
+      <div class="st-h">Phase 6 — Deployment for Legacy Systems</div>
+      <div class="ss">More caution than greenfield — rollback plan is non-optional</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📋</span> Pre-Deploy Checklist (Agent-Verified)</div>
+    <pre><span class="st2">Before any deployment, verify ALL of these:
+
+## REGRESSION GATE
+□ All existing tests pass (no NEW failures vs baseline)
+□ Coverage % did not DROP below previous measurement
+□ @smoke Playwright suite passes against staging
+□ @contract customer API tests pass against staging
+
+## CHANGE IMPACT GATE
+□ DEPENDENCY_MAP.md checked — downstream services notified?
+□ DB schema change? → migration script + rollback script present
+□ API contract change? → new version path, old path preserved
+□ Shared library version change? → ALL services retested
+
+## CUSTOMER COMMUNICATION GATE
+□ Breaking change? → customer notified N days ago per SLA
+□ Deprecation notice sent + customer test env updated?
+
+## ROLLBACK PLAN
+□ Previous Docker image tag saved
+□ kubectl rollout undo command verified in staging
+□ DB rollback script tested in staging
+□ Post-rollback smoke test ready
+
+## MONITORING
+□ Error rate baseline recorded before deploy
+□ Alert thresholds set for 15-min post-deploy window
+
+Do NOT proceed if ANY checkbox unchecked. Escalate to human.</span></pre>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">🔄</span> Safe Deploy Strategy</div>
+    <ol class="steps">
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">1</div><div class="sc"><strong>Deploy to staging first — run all 4 test suites</strong><p>Never skip staging. Customer contract tests here save production incidents.</p></div></li>
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">2</div><div class="sc"><strong>Canary deploy — 5% traffic to new version</strong><p>Watch error rates for 15 min before full rollout. Automated rollback if error rate spikes.</p></div></li>
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">3</div><div class="sc"><strong>Blue-green swap (safest for legacy)</strong><p>Keep old version running until new is verified. Instant rollback = switch traffic back.</p></div></li>
+      <li><div class="sn" style="background:#e8f4ff;border:1px solid #b3d4f5;color:var(--c1)">4</div><div class="sc"><strong>Post-deploy: run @smoke + @contract against production</strong><p>If any fail → automated rollback. DevOps agent handles this automatically.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- PROMPT LIBRARY -->
+<section class="sec p-violet" id="prompts">
+  <div class="sh">
+    <div class="si">📚</div>
+    <div>
+      <div class="st-h">Prompt Library — Legacy-Specific</div>
+      <div class="ss">Copy-paste prompts tuned for existing production codebases</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ico">🔍</span> "What does this code actually do?"</div>
+      <pre style="font-size:11px;"><span class="st2">Read {ClassName}.java and all classes it calls.
+WITHOUT modifying anything, explain:
+1. What business problem this class solves
+2. The full data flow (input → processing → output)
+3. Every external call it makes (DB, HTTP, MQ)
+4. Every error case it handles (and what it returns)
+5. What CANNOT be changed without breaking callers
+6. What IS safe to change
+Be specific. Use actual method names.</span></pre>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ico">⚠️</span> "Is this safe to change?"</div>
+      <pre style="font-size:11px;"><span class="st2">I want to change {method/class/endpoint}.
+Assess BEFORE I do anything:
+1. Who calls this? (grep + DEPENDENCY_MAP.md)
+2. Is this customer-facing? (check CLAUDE.md)
+3. What tests currently cover this?
+4. What breaks if I change parameters? Return structure? Logic?
+5. Risk: LOW / MED / HIGH with justification
+6. Recommended approach
+Do NOT make any changes. Assessment only.</span></pre>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ico">🧪</span> "Write characterization tests"</div>
+      <pre style="font-size:11px;"><span class="st2">Write characterization tests for {ClassName}.
+(Tests that capture CURRENT behavior — right or wrong —
+as safety net before refactoring)
+
+For each method: call with realistic inputs, assert
+EXACTLY what it currently returns, assert side effects.
+
+Use @DisplayName: "current behavior: {description}"
+For known bugs: // TODO: behavior is bug (JIRA-XXXX)
+
+Goal: prevent regression. Document current state.</span></pre>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ico">📋</span> "New feature on legacy system"</div>
+      <pre style="font-size:11px;"><span class="st2">New feature for {service}: {description}
+
+Before creating stories, check:
+1. Any existing code partially implements this?
+2. Does this touch customer-facing endpoints?
+3. Requires DB schema change?
+4. Affects any shared library?
+
+Create stories that:
+- Build ON TOP OF existing patterns (not replace)
+- Include story for tests BEFORE implementation (TDD)
+- Mark any story touching DANGER ZONES with 🔴
+- Specify: exact files to create (new) vs modify (existing)</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section class="sec p-green" id="checklist">
+  <div class="sh">
+    <div class="si">✅</div>
+    <div>
+      <div class="st-h">Master Checklist — Do In This Order</div>
+      <div class="ss">The sequence matters. Don't skip ahead.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📋</span> Week 1 — Prework (No Code Changes Yet)</div>
+    <table>
+      <tr><th>#</th><th>Task</th><th>Tool</th><th>Output</th></tr>
+      <tr><td>1</td><td>Run code archaeology scan on each service</td><td>Claude Code (read-only)</td><td>SERVICE_PROFILE.md × N</td></tr>
+      <tr><td>2</td><td>Build cross-service dependency map</td><td>Claude Code</td><td>DEPENDENCY_MAP.md</td></tr>
+      <tr><td>3</td><td>Run test health scan on all services</td><td>Claude Code + mvn test</td><td>TEST_HEALTH.md × N</td></tr>
+      <tr><td>4</td><td>Write root CLAUDE.md from profiles</td><td>Claude.ai + you</td><td>CLAUDE.md</td></tr>
+      <tr><td>5</td><td>Write per-service CLAUDE.md files</td><td>Claude Code</td><td>{service}/CLAUDE.md × N</td></tr>
+      <tr><td>6</td><td>Write ARCHITECTURE.md (as-is, truthful)</td><td>Claude.ai</td><td>ARCHITECTURE.md</td></tr>
+      <tr><td>7</td><td>Write DOMAIN_GLOSSARY.md</td><td>You + Claude.ai</td><td>DOMAIN_GLOSSARY.md</td></tr>
+      <tr><td>8</td><td>Verify Claude answers the 4 training test questions correctly</td><td>Claude Code</td><td>Training verified ✅</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📋</span> Week 2 — Story Generation + Sprint 0 Planning</div>
+    <table>
+      <tr><th>#</th><th>Task</th><th>Output</th></tr>
+      <tr><td>9</td><td>Run Story Agent (legacy mode) on each service</td><td>Type A + B stories in Jira</td></tr>
+      <tr><td>10</td><td>Human review: mark P1 gaps, verify risk levels</td><td>Reviewed backlog</td></tr>
+      <tr><td>11</td><td>Sprint 0: ONLY fix P1 gaps (failing tests, security)</td><td>Clean test baseline</td></tr>
+      <tr><td>12</td><td>Rerun test health scan — verify baseline improved</td><td>Updated TEST_HEALTH.md</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ico">📋</span> Week 3–4 — First Autonomous Sprint</div>
+    <table>
+      <tr><th>#</th><th>Task</th><th>Output</th></tr>
+      <tr><td>13</td><td>Set up Playwright project structure + Layer 2 API tests</td><td>/e2e folder, basic API coverage</td></tr>
+      <tr><td>14</td><td>Add customer contract tests (Layer 3) — highest priority</td><td>@contract test suite</td></tr>
+      <tr><td>15</td><td>Add UI smoke tests (Layer 1) for core user journeys</td><td>@smoke test suite</td></tr>
+      <tr><td>16</td><td>Configure CI to gate on @contract + @smoke</td><td>Blocked deploys on failure</td></tr>
+      <tr><td>17</td><td>Run first feature story through full agentic pipeline</td><td>Story → code → tests → PR</td></tr>
+      <tr><td>18</td><td>Human review PR — verify patterns followed, no regressions</td><td>Approved PR ✅</td></tr>
+    </table>
+  </div>
+  <div class="alert al-green">
+    <span class="al-ico">✅</span>
+    <div><strong>Timeline:</strong> 2 weeks prework + 1 week Sprint 0 cleanup = 3 weeks before the pipeline runs cleanly. Systems that skip prework generate wrong stories, introduce regressions, and break customer integrations within 2 sprints.</div>
+  </div>
+</section>
+
+<hr>
+<div class="final-box">
+  <div class="fb-title">📍 Where to Start Tomorrow Morning</div>
+  <pre><span class="cm"># 1. Install Claude Code (if not done)</span>
+npm install -g @anthropic-ai/claude-code && claude login
+
+<span class="cm"># 2. Navigate to your most critical service first</span>
+cd /path/to/your/user-service
+
+<span class="cm"># 3. Open Claude Code — read only mode</span>
+claude
+
+<span class="cm"># 4. Paste the SERVICE PROFILE prompt (Phase 0, Step 0.1)
+#    Let it run. Takes 10-15 min per service. Do NOT interrupt.</span>
+
+<span class="cm"># 5. Save output as SERVICE_PROFILE.md in that service root</span>
+
+<span class="cm"># 6. Repeat for all services (parallel terminals OK)</span>
+
+<span class="cm"># After all services scanned → cross-service dependency scan
+# Then build CLAUDE.md files → then stories → then pipeline
+# Claude will understand your system better than most engineers
+# who joined in the last 2 years.</span></pre>
+</div>
+
+</div>
+</body>
+</html>
