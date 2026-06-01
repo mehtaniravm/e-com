@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Copilot for Legacy Microservices — GKE + Apigee Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f6f8fc; --white:#ffffff; --s2:#eef1f8; --s3:#e4e9f4;
+    --bd:#cdd5e8; --bd2:#b4c0d8;
+    --c1:#1f6feb;  /* github blue */
+    --c2:#7c3aed;  /* violet */
+    --c3:#0e9e5c;  /* green */
+    --c4:#d4600a;  /* orange */
+    --c5:#c0392b;  /* red */
+    --c6:#a07800;  /* amber */
+    --c7:#0891b2;  /* teal */
+    --c8:#2d6a4f;  /* apigee green */
+    --cop:#24292f; /* copilot dark */
+    --tx:#1a2640; --tm:#3f5270; --td:#6b82a0;
+    --sh:0 1px 4px rgba(0,40,100,.08),0 4px 16px rgba(0,40,100,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-size:14px;line-height:1.75}
+
+  .hero{padding:52px 44px 44px;background:linear-gradient(150deg,#0d1117 0%,#161b22 55%,#0d1117 100%);position:relative;overflow:hidden;border-bottom:2px solid #1f6feb}
+  .hero::before{content:'';position:absolute;top:-100px;right:-80px;width:560px;height:560px;background:radial-gradient(circle,rgba(31,111,235,.08) 0%,transparent 65%);pointer-events:none}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:#79c0ff;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .eyebrow::before{content:'';width:28px;height:1px;background:#79c0ff}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,4vw,38px);font-weight:800;line-height:1.12;margin-bottom:14px;color:#fff}
+  .hero h1 .a{color:#79c0ff} .hero h1 .b{color:#56d364}
+  .hero p{color:#8b949e;font-size:15px;max-width:720px;margin-bottom:22px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.72);background:rgba(255,255,255,.06)}
+
+  .nav{background:#fff;border-bottom:2px solid var(--bd);padding:0 44px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,40,100,.07)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{padding:13px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-2px}
+  .nav a:hover{color:var(--c1);border-bottom-color:var(--c1)}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:44px 44px 100px}
+
+  .sec{margin-bottom:56px;scroll-margin-top:60px}
+  .sh{display:flex;align-items:flex-start;gap:16px;margin-bottom:26px}
+  .si{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:var(--sh)}
+  .st-h{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;color:var(--tx)}
+  .ss{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);margin-top:4px}
+
+  .card{background:var(--white);border:1px solid var(--bd);border-radius:14px;padding:22px;margin-bottom:14px;box-shadow:var(--sh)}
+  .ch{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:9px}
+
+  /* prompt box — different from card */
+  .prompt-box{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:20px 22px;margin:10px 0;position:relative}
+  .prompt-label{position:absolute;top:-1px;left:18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#79c0ff;background:#0d1117;padding:0 6px;transform:translateY(-50%)}
+  .prompt-box pre{background:transparent;border:none;padding:0;color:#c9d1d9;font-size:12.5px;line-height:1.7;margin:0;white-space:pre-wrap}
+  .pm{color:#3d6b40} .pk{color:#c792ea} .ps{color:#a5d6a7} .pn{color:#ffd700} .ph{color:#79c0ff}
+
+  pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;margin:10px 0;color:#c9d1d9}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(31,111,235,.09);border:1px solid rgba(31,111,235,.18);border-radius:4px;padding:1px 6px;color:var(--c1)}
+
+  .ribbon{display:flex;overflow-x:auto;gap:0;margin-bottom:26px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;scrollbar-width:none;box-shadow:var(--sh)}
+  .ribbon::-webkit-scrollbar{display:none}
+  .rb{flex:1;min-width:120px;padding:14px 16px;border-right:1px solid var(--bd);background:var(--white)}
+  .rb:last-child{border-right:none}
+  .rb:hover{background:var(--s2)}
+  .rb-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--td);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}
+  .rb-t{font-family:'Syne',sans-serif;font-size:12px;font-weight:700}
+  .rb-d{font-size:11px;color:var(--tm);margin-top:2px}
+
+  .steps{list-style:none}
+  .step{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--s3)}
+  .step:last-child{border-bottom:none}
+  .sn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0;margin-top:2px}
+  .sc strong{display:block;color:var(--tx);margin-bottom:3px;font-size:13px;font-weight:600}
+  .sc p{color:var(--tm);font-size:12.5px}
+  .sc code{font-size:11.5px}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 14px;background:var(--s2);color:var(--td);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:left;border-bottom:2px solid var(--bd)}
+  td{padding:10px 14px;border-bottom:1px solid var(--s3);vertical-align:top;color:var(--tm)}
+  td strong{color:var(--tx)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--s2)}
+
+  .alert{border-radius:10px;padding:13px 17px;margin:14px 0;font-size:13px;display:flex;gap:11px;align-items:flex-start}
+  .al-blue{background:#dbeafe;border:1px solid #93c5fd;color:#1e3a8a}
+  .al-amber{background:#fff7e6;border:1px solid #f5c97a;color:#7a4a00}
+  .al-red{background:#fee2e2;border:1px solid #fca5a5;color:#7f1d1d}
+  .al-green{background:#dcfce7;border:1px solid #86efac;color:#14532d}
+  .al-purple{background:#ede9fe;border:1px solid #c4b5fd;color:#3b0764}
+  .al-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+  .alert strong{font-weight:600}
+
+  .hbox{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:18px 20px;margin:4px 0}
+  .hb-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px}
+
+  .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 9px;border-radius:20px;border:1px solid;display:inline-block;margin:2px}
+  .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+
+  ul.bl{padding-left:18px}
+  ul.bl li{margin-bottom:7px;color:var(--tm);font-size:13px}
+  ul.bl li strong{color:var(--tx);font-weight:600}
+
+  hr{border:none;border-top:1px solid var(--bd);margin:36px 0}
+
+  /* Phase color helpers */
+  .p-cop .si{background:linear-gradient(135deg,#e8f4ff,#d0e8ff);border:1px solid #93c5e8}
+  .p-orange .si{background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097}
+  .p-violet .si{background:linear-gradient(135deg,#f0eaff,#ddd0f8);border:1px solid #b89de8}
+  .p-green .si{background:linear-gradient(135deg,#eafaf2,#c8f0da);border:1px solid #7dca9e}
+  .p-amber .si{background:linear-gradient(135deg,#fffbe8,#fff0b8);border:1px solid #e8d068}
+  .p-teal .si{background:linear-gradient(135deg,#e6f7f9,#c0ecf2);border:1px solid #7dd4e0}
+  .p-red .si{background:linear-gradient(135deg,#fff0ef,#fdd8d6);border:1px solid #f0a09a}
+  .p-apigee .si{background:linear-gradient(135deg,#e6f4ec,#c2e8d0);border:1px solid #7ec99e}
+
+  /* Copilot chat bubble */
+  .copilot-q{background:var(--s2);border:1px solid var(--bd);border-radius:10px 10px 10px 2px;padding:12px 16px;margin:8px 0 4px 20px;font-size:13px;color:var(--tx);position:relative}
+  .copilot-q::before{content:'👤';position:absolute;left:-24px;top:8px;font-size:14px}
+  .copilot-a{background:#0d1117;border:1px solid #30363d;border-radius:10px 10px 2px 10px;padding:12px 16px;margin:4px 20px 8px 0;font-size:12.5px;color:#c9d1d9;font-family:'JetBrains Mono',monospace;position:relative;line-height:1.6}
+  .copilot-a::before{content:'🤖';position:absolute;right:-24px;top:8px;font-size:14px}
+
+  .final-box{background:linear-gradient(135deg,#0d1117,#161b22);border-radius:14px;padding:28px;color:white;margin-top:8px;border:1px solid #30363d}
+  .final-box pre{background:#060c16;border-color:#1e2d40;color:#a8c8e8}
+  .final-box .fb-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px;color:#fff}
+
+  /* tool badge */
+  .tool-badge{display:inline-flex;align-items:center;gap:5px;background:#1f6feb15;border:1px solid #1f6feb35;border-radius:6px;padding:3px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c1);margin:2px}
+  .tool-badge.gh{background:#24292f12;border-color:#24292f30;color:#24292f}
+  .tool-badge.apigee{background:#0e9e5c12;border-color:#0e9e5c35;color:var(--c8)}
+  .tool-badge.gke{background:#1a73e812;border-color:#1a73e835;color:#1a73e8}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">GitHub Copilot · Legacy Microservices · GKE + Apigee Architecture</div>
+  <h1><span class="a">GitHub Copilot</span> for<br>Legacy <span class="b">Microservices</span> Analysis</h1>
+  <p>Step-by-step guide: how to analyze each production microservice using Copilot, what prompts to use, how to handle GKE deployment context and Apigee API gateway (basic auth + JWT passthrough), and how to generate stories, fix code, and build tests — all from your existing codebase.</p>
+  <div class="chips">
+    <span class="chip">🤖 Copilot Chat + Workspace</span>
+    <span class="chip">☸️ GKE Kubernetes Context</span>
+    <span class="chip">🔑 Apigee Basic Auth + JWT</span>
+    <span class="chip">📝 Story Gen from Code</span>
+    <span class="chip">🧪 Test Coverage Uplift</span>
+    <span class="chip">🚀 GKE-Safe Deploy</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#setup">Setup</a>
+  <a href="#workspace">Workspace</a>
+  <a href="#scan">Code Scan Prompts</a>
+  <a href="#apigee">Apigee + Auth</a>
+  <a href="#gke">GKE Context</a>
+  <a href="#stories">Story Gen</a>
+  <a href="#fixes">Legacy Fixes</a>
+  <a href="#tests">Tests</a>
+  <a href="#deploy">Deploy</a>
+  <a href="#cheatsheet">Prompt Cheatsheet</a>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══ SETUP ═══ -->
+<section class="sec p-cop" id="setup">
+  <div class="sh">
+    <div class="si">⚙️</div>
+    <div>
+      <div class="st-h">Copilot Setup for Legacy Microservices</div>
+      <div class="ss">One-time configuration before any analysis begins</div>
+    </div>
+  </div>
+
+  <div class="alert al-blue">
+    <span class="al-ico">💡</span>
+    <div><strong>Copilot vs Claude Code:</strong> Both tools complement each other. Use <strong>Copilot</strong> inside VS Code / IntelliJ for inline analysis, file-level prompts, and Copilot Chat while coding. Use <strong>Claude Code</strong> (CLI) for multi-service batch scans, cross-repo analysis, and orchestrating the full SDLC pipeline. This guide covers the Copilot side.</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔧 Required Extensions & Tools</div>
+    <ol class="steps">
+      <li>
+        <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">1</div>
+        <div class="sc">
+          <strong>GitHub Copilot + Copilot Chat (VS Code)</strong>
+          <p>Install <code>GitHub.copilot</code> + <code>GitHub.copilot-chat</code>. Requires GitHub Copilot Business or Enterprise license. Sign in with your GitHub org account.</p>
+        </div>
+      </li>
+      <li>
+        <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">2</div>
+        <div class="sc">
+          <strong>Open each microservice as its own VS Code workspace</strong>
+          <p>Don't open all services in one mega-workspace — Copilot context quality drops. One service = one workspace window. Use <code>File → Add Folder to Workspace</code> for shared libraries only.</p>
+        </div>
+      </li>
+      <li>
+        <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">3</div>
+        <div class="sc">
+          <strong>Install Kubernetes + Cloud Code extensions (for GKE context)</strong>
+          <p><code>ms-kubernetes-tools.vscode-kubernetes-tools</code> + <code>GoogleCloudTools.cloudcode</code>. These let Copilot understand your K8s manifests and GKE deployment context.</p>
+        </div>
+      </li>
+      <li>
+        <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">4</div>
+        <div class="sc">
+          <strong>Create <code>.github/copilot-instructions.md</code> in each service repo</strong>
+          <p>Copilot reads this automatically. This is how you "train" Copilot on your service. See the template below.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="ch">📄 <code>.github/copilot-instructions.md</code> — Template Per Service</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:10px;">This file is the most important setup step. Copilot reads it for every suggestion in this repo.</p>
+    <pre># copilot-instructions.md
+# Copilot context for: user-service
+
+## SERVICE CONTEXT
+- Service: user-service | Java 11 | Spring Boot 2.7.x | PostgreSQL
+- Part of a production microservices platform on GKE (Google Kubernetes Engine)
+- Customer APIs exposed via Apigee API Gateway
+
+## AUTH MODEL (critical for any API work)
+- External (customer-facing) APIs: protected by Apigee Basic Auth at gateway
+  Apigee validates credentials before request reaches this service
+  This service does NOT see raw Basic Auth headers — receives forwarded headers only
+- Internal JWT flows: Apigee passes JWT in Authorization: Bearer {token}
+  JwtAuthFilter validates token locally. Token claims: userId, roles[], sessionId, exp
+- Public endpoints: annotated @PublicEndpoint (custom annotation)
+- DO NOT add raw Basic Auth validation in service code — Apigee handles it
+
+## GKE DEPLOYMENT
+- Namespace: production | Staging: staging
+- Config via ConfigMaps + Secrets (never hardcode values)
+- Health: /actuator/health (liveness) | /actuator/health/readiness (readiness)
+- Resources: requests.memory=256Mi, limits.memory=512Mi, cpu limits=500m
+- HPA enabled: min=2, max=8 replicas on CPU 70%
+
+## CODING PATTERNS (follow exactly, don't invent new ones)
+- Exception: GlobalExceptionHandler → error format {code, message, timestamp}
+- DTOs: separate Request/Response. Use MapStruct. Never expose @Entity.
+- Logging: SLF4J + MDC(requestId, userId). No System.out.println ever.
+- Testing: JUnit 4 (NOT 5). Mockito. H2 in-memory. Base class: BaseServiceTest.
+- Transactions: @Transactional on service layer only, never controllers.
+
+## CUSTOMER API CONTRACTS
+- /api/v1/users/** : CustomerA — DO NOT change response structure
+- /api/v1/auth/**  : CustomerB — DO NOT change without versioning
+
+## NEVER DO
+- Never hardcode secrets, passwords, or API keys
+- Never add System.exit() or Runtime.halt()
+- Never bypass JwtAuthFilter for non-@PublicEndpoint routes
+- Never use RestTemplate for new code (use WebClient instead)</pre>
+  </div>
+</section>
+
+<!-- ═══ WORKSPACE ═══ -->
+<section class="sec p-orange" id="workspace">
+  <div class="sh">
+    <div class="si">🗂</div>
+    <div>
+      <div class="st-h">Copilot Workspace Setup Per Service</div>
+      <div class="ss">How to structure your workspace for maximum Copilot accuracy</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📁 Optimal Workspace File Structure</div>
+    <pre style="color:#c9d1d9">user-service/
+├── .github/
+│   └── copilot-instructions.md    ← Copilot reads this automatically
+├── .vscode/
+│   └── settings.json              ← Enable Copilot features
+├── SERVICE_PROFILE.md             ← Generated by initial scan (see Phase 0)
+├── DEPENDENCY_MAP.md              ← Cross-service dependencies
+├── TEST_HEALTH.md                 ← Current test state
+├── ARCHITECTURE_NOTES.md         ← Apigee routes, GKE config, auth flows
+└── src/
+    ├── main/java/...
+    └── test/java/...</pre>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">⚙️ <code>.vscode/settings.json</code></div>
+      <pre style="font-size:11.5px;">{
+  "github.copilot.enable": {
+    "*": true,
+    "java": true,
+    "yaml": true,
+    "dockerfile": true
+  },
+  "github.copilot.chat.localeOverride": "en",
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.renameSuggestions.triggerAutomatically": true
+}</pre>
+    </div>
+    <div class="card">
+      <div class="ch">💬 Open Copilot Chat Modes</div>
+      <ul class="bl">
+        <li><strong>Inline Chat</strong> (<code>Ctrl+I</code>) — ask about code at cursor</li>
+        <li><strong>Chat Panel</strong> (<code>Ctrl+Shift+I</code>) — multi-turn conversation</li>
+        <li><strong>@workspace</strong> — asks across all files in workspace</li>
+        <li><strong>@terminal</strong> — asks about terminal output</li>
+        <li><strong>#file</strong> — attach specific file to context</li>
+        <li><strong>#selection</strong> — ask about highlighted code</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CODE SCAN PROMPTS ═══ -->
+<section class="sec p-violet" id="scan">
+  <div class="sh">
+    <div class="si">🔍</div>
+    <div>
+      <div class="st-h">Code Scan Prompts — Per Service Analysis</div>
+      <div class="ss">Exact prompts to paste into Copilot Chat for each microservice</div>
+    </div>
+  </div>
+
+  <div class="alert al-purple">
+    <span class="al-ico">📌</span>
+    <div><strong>How to use these prompts:</strong> Open Copilot Chat panel (<code>Ctrl+Shift+I</code>), type <code>@workspace</code> before the prompt so Copilot scans all files, not just the open editor. Run each prompt in sequence. Save the output to the corresponding .md file in your repo.</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 1 — Service Identity & Stack Scan</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — paste as-is</div>
+      <pre><span class="ph">@workspace</span> Analyze this microservice codebase and produce a SERVICE_PROFILE.md. 
+Include exactly:
+
+<span class="ps">## 1. SERVICE IDENTITY</span>
+- Service name, primary business domain, estimated age (check earliest patterns)
+- Is this customer-facing? Which Apigee proxy routes map to this service?
+- List ALL REST endpoints: HTTP method, path, brief description
+
+<span class="ps">## 2. TECHNOLOGY STACK</span>
+- Java version, Spring Boot version (from pom.xml)
+- All dependencies with versions (highlight anything outdated or with known CVEs)
+- Database: type, connection pool library, schema name if visible
+- Any Feign clients, RestTemplate, or WebClient beans (these call other services)
+
+<span class="ps">## 3. AUTHENTICATION HANDLING</span>
+- Where is JWT validated? (find JwtAuthFilter or equivalent)
+- Which endpoints are public (@PublicEndpoint or security config exclusions)?
+- Are there any endpoints that do their own auth (should not — Apigee does it)?
+- Where are MDC context values (requestId, userId) set and propagated?
+
+<span class="ps">## 4. CODE HEALTH SIGNALS</span>
+- Count TODO and FIXME comments, summarize themes
+- Any deprecated Spring APIs in use?
+- Identify N+1 query risks (JPA relationships without fetch type specified)
+- Any hardcoded values that should be in ConfigMap/Secrets?
+- Security red flags (SQL string concatenation, logging sensitive data, etc.)
+
+<span class="ps">## 5. TEST STATE</span>
+- Count of test classes vs production classes (rough coverage estimate)
+- JUnit 4 or JUnit 5?
+- Are integration tests present? What infrastructure do they use (H2/Testcontainers)?
+- List any @Ignore or @Disabled tests
+
+Output as markdown. Be specific — use actual class names and file paths.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 2 — Apigee & Auth Flow Deep Scan</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — run after Prompt 1</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:src/main/java</span>
+
+Analyze this service's security and authentication model specifically for 
+our Apigee gateway setup. We use TWO auth patterns:
+
+Pattern A — Basic Auth via Apigee:
+  Customer sends Basic Auth → Apigee validates → Apigee strips and forwards
+  Service receives request WITHOUT Basic Auth headers (Apigee handled it)
+  
+Pattern B — JWT passthrough:
+  Customer sends Bearer JWT → Apigee validates signature → Apigee forwards JWT
+  Service receives and re-validates JWT locally via JwtAuthFilter
+
+Scan and answer:
+1. Which endpoints receive JWT (look for Authorization header usage)?
+2. Which endpoints are Basic-Auth-protected at Apigee only (no JWT in service)?
+3. Are there any endpoints that incorrectly try to parse Basic Auth themselves?
+4. Is the JwtAuthFilter correctly excluding /actuator/health endpoints?
+5. Are Apigee-forwarded custom headers (X-Forwarded-User, X-API-Key, X-Consumer-ID) 
+   being captured and logged in MDC?
+6. Any CORS configuration present? Is it correct for our GKE ingress setup?
+7. Are there hardcoded allowed origins or JWT secret values?
+
+Produce: APIGEE_AUTH_MAP.md listing each endpoint and its auth model.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 3 — GKE Deployment Readiness Scan</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — include k8s manifest files</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:k8s</span> <span class="pn">#file:src/main/resources/application.yml</span>
+
+Analyze this service for GKE (Google Kubernetes Engine) deployment health.
+
+Check and report:
+<span class="ps">## Health Endpoints</span>
+- Is /actuator/health configured and responding correctly?
+- Is liveness vs readiness probe correctly separated?
+- Does any startup logic make the app unready before data is loaded?
+
+<span class="ps">## Configuration Externalization</span>
+- Are there hardcoded values in application.yml that should be in K8s ConfigMaps?
+- Are there any secrets (passwords, API keys, JWT secrets) NOT coming from K8s Secrets?
+- Are Spring profiles set up for 'staging' and 'production' environments?
+
+<span class="ps">## Resource & Scaling</span>
+- Are JVM heap settings (-Xmx) consistent with K8s memory limits?
+  (JVM max heap should be ~75% of container memory limit)
+- Is the app stateless (no in-memory session state that would break with multiple pods)?
+- Any file system writes that would fail in a read-only container?
+
+<span class="ps">## Graceful Shutdown</span>
+- Is spring.lifecycle.timeout-per-shutdown-phase set?
+- Are active requests drained before shutdown?
+- Does it respond correctly to SIGTERM?
+
+<span class="ps">## Kubernetes Manifest Review</span>
+(analyze files in /k8s if present)
+- Do resource requests/limits match the app's actual usage patterns?
+- Is imagePullPolicy set to Always for production?
+- Are readiness gates set before receiving traffic?
+
+Output: GKE_READINESS.md with PASS/FAIL/WARN per check item.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 4 — Inter-Service Dependency Scan</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat</div>
+      <pre><span class="ph">@workspace</span>
+
+Map all inter-service communication in this codebase.
+
+Find:
+1. All outbound HTTP calls (RestTemplate beans, WebClient beans, Feign interfaces)
+   - Target service URL or config key
+   - Is there a circuit breaker (Resilience4j, Hystrix)?
+   - Is there a retry policy?
+   - What happens if the downstream service is down?
+
+2. All message queue interactions (RabbitMQ, Kafka, Pub/Sub)
+   - Topic/queue names
+   - Is this service a producer, consumer, or both?
+   - Is there a dead-letter queue configured?
+
+3. Database dependencies
+   - Is this DB shared with any other service? (check schema names, connection strings)
+   - Any direct DB-to-DB joins that cross service boundaries?
+
+4. Shared library dependencies
+   - Any internal common-* or shared-* JARs?
+   - What version? Are other services using the same version?
+
+5. Apigee-proxied calls
+   - Does this service call any Apigee-fronted endpoints (i.e., external APIs)?
+   - How are the API keys/credentials managed for those calls?
+
+Output: DEPENDENCY_MAP.md with a risk rating (HIGH/MED/LOW) for each dependency.</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ APIGEE + AUTH ═══ -->
+<section class="sec p-apigee" id="apigee">
+  <div class="sh">
+    <div class="si">🔑</div>
+    <div>
+      <div class="st-h">Apigee + Auth — Understanding Your Gateway Layer</div>
+      <div class="ss">Critical context for Copilot to understand before touching any security code</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🗺 Your Auth Architecture — What Copilot Must Know</div>
+    <pre style="color:#c9d1d9">
+CUSTOMER REQUEST FLOW:
+═══════════════════════════════════════════════════════════════
+
+  Customer App  ──────────→  Apigee API Gateway  ──────────→  GKE Service
+                              (Google Cloud)                   (Internal)
+
+PATTERN A — Basic Auth (most external APIs):
+  Customer:  GET /api/v1/orders  +  Authorization: Basic base64(user:pass)
+  Apigee:    Validates credentials against Apigee app credentials
+             Strips Basic Auth header
+             Adds: X-Consumer-ID, X-API-Key, X-Apigee-App-Name headers
+  Service:   Receives request with NO Authorization header
+             Trusts X-Consumer-ID for identity (set by Apigee)
+             No auth validation needed in service code ← KEY POINT
+
+PATTERN B — JWT Passthrough (admin/partner APIs):
+  Customer:  POST /api/v1/admin/users  +  Authorization: Bearer {JWT}
+  Apigee:    Validates JWT signature (public key)
+             Forwards full request INCLUDING Authorization: Bearer header
+  Service:   JwtAuthFilter intercepts → re-validates JWT locally
+             Extracts: userId, roles[], sessionId from claims
+             Sets MDC context with these values
+             Route proceeds if valid, 401 if not
+
+WHAT THIS MEANS FOR COPILOT:
+  - Never generate Basic Auth parsing code in service layer
+  - JwtAuthFilter is the ONLY JWT validation point in service
+  - X-Consumer-ID header is the authoritative customer identity for Pattern A
+  - /actuator/** must ALWAYS be excluded from JwtAuthFilter
+  - Any new endpoint must be labeled: BASIC_AUTH_VIA_APIGEE | JWT | PUBLIC
+</pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 5 — Auth Gap Analysis</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — security audit</div>
+      <pre><span class="ph">@workspace</span>
+
+Audit the security model of this service. Our gateway is Apigee.
+Context: 
+- Pattern A endpoints: Apigee handles Basic Auth, service receives X-Consumer-ID header
+- Pattern B endpoints: Apigee passes JWT, service validates via JwtAuthFilter
+- No endpoint should ever parse Basic Auth credentials itself
+
+Find and flag:
+1. Any code that reads or parses Authorization: Basic headers directly
+2. Any endpoint missing from SecurityConfig's permitAll() or JWT filter chain
+3. Any endpoint that exposes sensitive data without role check
+4. X-Consumer-ID header — is it being validated as non-null before use?
+5. JWT expiry — is 401 returned cleanly when token is expired?
+6. Are Apigee custom headers (X-Consumer-ID, X-API-Key) being logged? 
+   (They should be in MDC, not in plain log messages — that's a data leak)
+7. Are there any hard-coded credentials in SecurityConfig or application.yml?
+8. CORS: is Access-Control-Allow-Origin: * present anywhere? (Must not be in prod)
+
+For each finding: FILE + LINE + SEVERITY (P1/P2/P3) + RECOMMENDED FIX</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📋 Auth Model Reference Table — Fill Per Service</div>
+    <table>
+      <tr><th>Endpoint Pattern</th><th>Apigee Policy</th><th>Service Receives</th><th>Service Must Do</th><th>Copilot Rule</th></tr>
+      <tr><td><code>/api/v1/public/**</code></td><td>None (passthrough)</td><td>Raw request</td><td>Nothing</td><td>Mark @PublicEndpoint</td></tr>
+      <tr><td><code>/api/v1/customer/**</code></td><td>Basic Auth validation</td><td>X-Consumer-ID header</td><td>Read X-Consumer-ID</td><td>Never parse Basic Auth</td></tr>
+      <tr><td><code>/api/v1/admin/**</code></td><td>JWT verify + forward</td><td>Bearer JWT token</td><td>JwtAuthFilter validates</td><td>Use roles from JWT claims</td></tr>
+      <tr><td><code>/actuator/health</code></td><td>None (GKE internal)</td><td>Raw request from K8s</td><td>Nothing</td><td>Always in permitAll()</td></tr>
+      <tr><td><code>/internal/**</code></td><td>Service-mesh mTLS</td><td>Internal JWT or none</td><td>Service-specific</td><td>Check each service</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ GKE CONTEXT ═══ -->
+<section class="sec p-teal" id="gke">
+  <div class="sh">
+    <div class="si">☸️</div>
+    <div>
+      <div class="st-h">GKE Context — Teaching Copilot Your Kubernetes Setup</div>
+      <div class="ss">Prompts and config so Copilot generates GKE-correct code and manifests</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📄 Add to <code>copilot-instructions.md</code> — GKE Section</div>
+    <pre># GKE Deployment Context
+
+## Cluster Setup
+- Project: [your-gcp-project-id]
+- Cluster: production-cluster (us-central1) | staging-cluster (us-central1)
+- Namespaces: production | staging | monitoring
+- Ingress: GKE Nginx Ingress Controller (NOT GKE native ingress)
+- Service mesh: None (plain HTTP between services in cluster)
+- DNS: service-name.namespace.svc.cluster.local
+
+## ConfigMap and Secret Conventions
+# DB URL comes from ConfigMap:
+spring.datasource.url=${DB_URL}   # → K8s ConfigMap: db-config
+spring.datasource.password=${DB_PASSWORD}  # → K8s Secret: db-secret
+
+# JWT Secret:
+jwt.secret=${JWT_SECRET}   # → K8s Secret: jwt-secret
+
+## Deployment Conventions
+- image: gcr.io/[project]/[service-name]:${IMAGE_TAG}
+- imagePullPolicy: Always
+- replicas: 2 minimum (never 1 in production)
+- rollingUpdate: maxSurge=1, maxUnavailable=0
+
+## JVM Memory Rule
+Container memory limit: 512Mi → JVM: -Xmx384m -Xms256m
+Container memory limit: 1Gi  → JVM: -Xmx768m -Xms512m
+(Always set both -Xmx and -Xms to avoid heap resize thrashing)
+
+## Health Check Endpoints
+livenessProbe:  GET /actuator/health/liveness   (is the app alive?)
+readinessProbe: GET /actuator/health/readiness  (is the app ready for traffic?)
+startupProbe:   GET /actuator/health            (initial startup, 30s window)</pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 6 — Generate/Fix K8s Manifests</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — Kubernetes manifest generation</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:k8s/deployment.yaml</span> <span class="pn">#file:src/main/resources/application.yml</span>
+
+Review and fix the Kubernetes deployment manifest for this service.
+Our GKE cluster conventions (from copilot-instructions.md apply).
+
+Check and correct:
+1. Memory/CPU: container limit 512Mi → JVM -Xmx384m must match
+   If JAVA_OPTS or JVM_OPTS env var is set, verify heap ≤ 75% of limit
+2. Probes:
+   - livenessProbe → /actuator/health/liveness, initialDelaySeconds: 30
+   - readinessProbe → /actuator/health/readiness, initialDelaySeconds: 15
+   - startupProbe → /actuator/health, failureThreshold: 10, periodSeconds: 5
+3. Environment variables:
+   - All config must come from ConfigMap/Secret refs (no hardcoded values)
+   - Required: DB_URL (ConfigMap), DB_PASSWORD (Secret), JWT_SECRET (Secret)
+4. Replicas: minimum 2 for production namespace
+5. PodDisruptionBudget: add if not present (minAvailable: 1)
+6. Rolling update: maxUnavailable: 0, maxSurge: 1
+7. Graceful termination: terminationGracePeriodSeconds: 60
+   Add preStop sleep hook: lifecycle.preStop.exec.command: ["sh","-c","sleep 5"]
+
+Output corrected manifest + list of changes made.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 7 — ConfigMap and Secret Audit</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — security + config audit</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:src/main/resources</span> <span class="pn">#file:k8s</span>
+
+Audit configuration externalization for GKE deployment.
+
+1. Scan all application*.yml files for values that should be externalized:
+   - Database URLs, credentials
+   - JWT secrets or signing keys  
+   - API keys for external services
+   - Apigee client credentials
+   - Feature flag values (should be in ConfigMap)
+   
+2. For each hardcoded value found, generate the K8s ConfigMap or Secret entry:
+   ConfigMap (non-sensitive):  db url, service urls, timeout values, feature flags
+   Secret (sensitive):         passwords, API keys, JWT secrets, certificates
+   
+3. Generate the corrected application.yml using ${ENV_VAR_NAME} placeholders
+
+4. Generate the corresponding K8s env block for the deployment manifest:
+   env:
+   - name: DB_URL
+     valueFrom:
+       configMapKeyRef:
+         name: [service]-config
+         key: db.url
+
+5. Generate the kubectl commands to create the ConfigMap and Secret objects</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STORY GEN ═══ -->
+<section class="sec p-green" id="stories">
+  <div class="sh">
+    <div class="si">📝</div>
+    <div>
+      <div class="st-h">Story Generation — From Code Analysis</div>
+      <div class="ss">Using Copilot to reverse-engineer stories and find gaps in production services</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 8 — Reverse Stories (What Code Currently Does)</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — story generation</div>
+      <pre><span class="ph">@workspace</span>
+
+Read all REST controllers in this service and generate USER STORIES 
+documenting what this service CURRENTLY does (reverse engineering).
+
+For each distinct feature/endpoint group:
+Title: [Existing] {Feature Name}
+User Story: As a {actor inferred from code}, I can {action}, So that {business purpose}
+Current Implementation: {ControllerClass.methodName → ServiceClass.methodName}
+Auth Model: BASIC_AUTH_VIA_APIGEE | JWT_PASSTHROUGH | PUBLIC
+Acceptance Criteria (from actual code logic):
+  - Given {input condition from validation annotations}
+  - When {action}
+  - Then {HTTP status + response structure from return type}
+  - And {error case from exception handlers}
+Story Points: {1/2/3/5/8 based on complexity of implementation}
+Customer Impact: HIGH (Apigee-exposed) | MED (internal) | LOW (ops/monitoring)
+
+IMPORTANT:
+- Note any endpoint where the auth model seems wrong or inconsistent
+- Note any endpoint missing input validation
+- Note any endpoint that returns 500 on business errors (should be 4xx)
+- Group related endpoints into one story
+
+Output sorted by: Customer Impact (HIGH first), then Story Points (largest first)</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 9 — Gap Stories (What's Missing or Broken)</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — gap analysis</div>
+      <pre><span class="ph">@workspace</span>
+
+Analyze this service for gaps, bugs, and missing features.
+Generate GAP STORIES for everything that needs work.
+
+Look for:
+A. SECURITY GAPS (P1 — fix immediately)
+   - Endpoints accessible without auth that should require it
+   - Missing input validation on customer-facing endpoints
+   - Sensitive data in logs (email, phone, token values)
+   - Any JWT handling that doesn't match the JwtAuthFilter pattern
+
+B. GKE/CLOUD GAPS (P1)
+   - Hardcoded config values that should be in ConfigMaps/Secrets
+   - Missing health endpoints or incorrect probe configuration
+   - JVM memory settings not matching container limits
+
+C. RELIABILITY GAPS (P2)
+   - HTTP client calls to other services with no timeout set
+   - HTTP client calls with no retry or circuit breaker
+   - N+1 database queries (JPA relations without fetch strategy)
+   - Missing @Transactional on service methods that do multiple DB writes
+
+D. TEST COVERAGE GAPS (P2)
+   - Controllers with zero test classes
+   - Service classes with zero test classes
+   - Currently failing/ignored tests (flag each with error if visible)
+
+E. TECH DEBT (P3)
+   - Deprecated Spring Boot APIs in use
+   - TODO/FIXME clusters that are shippable tech debt
+   - Dependencies with known CVEs (check versions)
+
+For each gap story:
+Title: [Fix/Add/Upgrade] {specific thing}
+Priority: P1 | P2 | P3
+Risk: what breaks if this is done wrong?
+Story Points: effort estimate
+Touches Customer API: YES | NO</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📊 Expected Output Example</div>
+    <pre style="color:#c9d1d9">## user-service — Story Output
+
+REVERSE STORIES (Type A):
+US-E001 [Existing] Customer User Authentication via Apigee        5pt  Customer:HIGH  JWT
+US-E002 [Existing] Admin User CRUD with Role Management           5pt  Customer:HIGH  JWT
+US-E003 [Existing] Customer Profile Self-Service                  3pt  Customer:HIGH  BASIC_AUTH
+US-E004 [Existing] Bulk User Import (legacy JDBC path)            8pt  Customer:MED   BASIC_AUTH
+
+GAP STORIES (Type B):
+US-G001 [Fix] POST /users missing @Valid — no input validation    3pt  P1  ← SECURITY
+US-G002 [Fix] userId logged in plain text (PII data leak)         2pt  P1  ← SECURITY
+US-G003 [Fix] JVM heap 512m but container limit 512Mi (OOM risk)  2pt  P1  ← GKE
+US-G004 [Fix] RestTemplate to order-service has no timeout        3pt  P2
+US-G005 [Add] Unit tests for UserService (currently 0%)           5pt  P2
+US-G006 [Upgrade] Spring Boot 2.7.x → 3.x (dedicated sprint)    13pt  P2  ← careful</pre>
+  </div>
+</section>
+
+<!-- ═══ LEGACY FIXES ═══ -->
+<section class="sec p-amber" id="fixes">
+  <div class="sh">
+    <div class="si">🔧</div>
+    <div>
+      <div class="st-h">Legacy Fixes — Copilot-Assisted Corrections</div>
+      <div class="ss">Using Copilot inline chat and /fix commands safely on production code</div>
+    </div>
+  </div>
+
+  <div class="alert al-red">
+    <span class="al-ico">🚨</span>
+    <div><strong>Copilot Safety Rule for Legacy:</strong> Before accepting ANY Copilot suggestion on existing production code — check it doesn't change the method signature, the HTTP contract, or the error response format. Those changes break customers. Use <code>/explain</code> on any suggestion you're unsure about before accepting.</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 10 — Safe Input Validation Addition</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Inline Chat — open UserController.java, Ctrl+I</div>
+      <pre><span class="ph">/fix</span> Add Bean Validation annotations to the request DTO used by this endpoint.
+
+Rules:
+- Use @Valid on the @RequestBody parameter in the controller method
+- Add validation annotations to the DTO fields only (not the entity)
+- Use the SAME error response format as GlobalExceptionHandler produces
+  (check the existing handler — format is {code, message, timestamp})
+- Do NOT change the method signature or HTTP status codes for success paths
+- Do NOT add a new exception handler — the existing GlobalExceptionHandler handles it
+- Add a // VALIDATION ADDED comment above each new annotation
+
+Show me the diff before applying.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 11 — Fix HTTP Client (Add Timeout + Retry)</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — select the RestTemplate/WebClient bean</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#selection</span>
+
+This HTTP client call to [service-name] has no timeout configured.
+In GKE, if [service-name] is slow or down, this will hang the thread pool.
+
+Fix it by:
+1. If RestTemplate: add a SimpleClientHttpRequestFactory with 
+   connectTimeout=3000ms, readTimeout=5000ms
+   Wrap the call with try/catch for ResourceAccessException
+   On timeout: throw ServiceUnavailableException("service-name unavailable")
+
+2. If WebClient: add .timeout(Duration.ofSeconds(5)) on the request chain
+   Handle TimeoutException → ServiceUnavailableException
+
+3. Keep the fix minimal — do NOT refactor the method, only add timeout + error handling
+4. Check GlobalExceptionHandler handles ServiceUnavailableException (returns 503)
+   If not, add the handler there (not inline)
+
+Show diff only. Do not change business logic.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 12 — Fix JVM Memory for GKE</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — include Dockerfile and k8s manifest</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:Dockerfile</span> <span class="pn">#file:k8s/deployment.yaml</span>
+
+The JVM memory settings are not aligned with the K8s container memory limit.
+
+Rule: JVM -Xmx should be 75% of container memory limit.
+Rule: Always set both -Xmx AND -Xms (prevents heap resize at runtime).
+Rule: Add -XX:+UseContainerSupport (auto-detect in JDK 11+, but be explicit).
+Rule: Add -XX:MaxRAMPercentage=75.0 as alternative to explicit -Xmx.
+
+1. Find the current container memory limit (resources.limits.memory in deployment.yaml)
+2. Calculate correct heap: limit × 0.75
+3. Show where JVM flags are currently set (Dockerfile ENTRYPOINT, ENV JAVA_OPTS, etc.)
+4. Generate corrected JAVA_OPTS or ENTRYPOINT with proper memory flags
+5. Also check: is -Dspring.profiles.active being set? It should match namespace.
+
+Do not change anything else in the Dockerfile or manifest.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 13 — Fix PII Logging</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — security fix</div>
+      <pre><span class="ph">@workspace</span>
+
+Scan all log statements (log.info, log.debug, log.error, log.warn) in this service.
+
+Find and fix any log statements that include:
+- Email addresses (look for email, emailAddress, userEmail variables)
+- Phone numbers (phone, phoneNumber, mobile)
+- Full names in combination with IDs
+- JWT token values or API keys
+- Passwords or credential values (even hashed)
+- IP addresses in combination with user ID (PII linkage)
+- X-Consumer-ID header values in plain log messages (use MDC instead)
+
+Fix pattern for each finding:
+- Replace direct value with: userId={userId} (already in MDC — no need to log again)
+- For debug logs with full objects: use .toString() masking or @JsonIgnore on sensitive fields
+- Remove any log.info that logs the full request body for endpoints handling PII
+
+Show me each finding: FILE:LINE — current log — fixed version
+Do not change any business logic, only log statements.</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTS ═══ -->
+<section class="sec p-violet" id="tests">
+  <div class="sh">
+    <div class="si">🧪</div>
+    <div>
+      <div class="st-h">Test Generation — Legacy-Safe with Copilot</div>
+      <div class="ss">Prompts to generate JUnit tests that match your existing test patterns</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 14 — Generate Unit Tests (Matching Existing Style)</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — open the target class first</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:src/test/java/BaseServiceTest.java</span>
+
+Generate unit tests for <span class="pn">#file:src/main/java/service/UserService.java</span>
+
+CRITICAL: Match the EXACT test style of BaseServiceTest.java and existing tests:
+- JUnit 4 annotations (@RunWith, @Test, NOT @ExtendWith)
+- Mockito @Mock fields with @InjectMocks (NOT @Autowired)
+- No Spring context loading (@SpringBootTest is too slow for unit tests)
+- Use BaseServiceTest as the parent class if it exists
+
+For each public method in UserService, write tests covering:
+1. Happy path — normal successful execution
+2. Resource not found — should throw appropriate exception (check what GlobalExceptionHandler expects)
+3. Validation failure — null/empty inputs where the service does its own validation
+4. Downstream failure — mock the repository/downstream service to throw exception
+5. Auth-specific — if the method uses SecurityContext, mock it correctly
+
+Naming convention: {methodName}_{condition}_{expectedOutcome}
+Example: createUser_emailAlreadyExists_throwsDuplicateEmailException
+
+Also: 
+- Check if any method calls JwtAuthFilter/SecurityContext — mock it with a helper in BaseServiceTest
+- If the service calls another service via HTTP client — mock the client bean, not the HTTP call
+- Do NOT test Spring framework behavior (mapping, serialization) — that's controller test territory
+
+Output: complete test class, ready to compile.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 15 — Controller Test with MockMvc + Auth Headers</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — controller layer tests including Apigee headers</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:src/main/java/controller/UserController.java</span>
+
+Generate MockMvc controller tests for UserController.
+
+Auth setup (IMPORTANT for our Apigee model):
+- For Pattern A endpoints (Basic Auth via Apigee): 
+  Add .header("X-Consumer-ID", "test-consumer-123") to requests
+  No Authorization header needed (Apigee strips it before reaching service)
+  
+- For Pattern B endpoints (JWT passthrough):
+  Add .header("Authorization", "Bearer " + buildTestJwt("ADMIN", "user-123"))
+  Create a TestJwtBuilder helper in the test class
+
+Test each endpoint for:
+1. Happy path: correct status code + response body structure
+2. Missing required headers (X-Consumer-ID null for Pattern A endpoints)
+3. Invalid JWT for Pattern B endpoints → expect 401
+4. Forbidden role (e.g., CUSTOMER trying ADMIN endpoint) → expect 403
+5. Request body validation failure → expect 400 with error format {code, message, timestamp}
+6. Service layer throws exception → verify correct HTTP status and error format
+
+Use @WebMvcTest (NOT @SpringBootTest) — loads only the web layer.
+Mock all @Service dependencies with @MockBean.
+Use existing BaseControllerTest as parent if it exists.
+
+Output: complete test class with imports.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 16 — Fix Currently Failing Tests</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — run mvn test first, paste output</div>
+      <pre><span class="ph">@workspace</span>
+
+Here is the output of mvn test for this service:
+[PASTE FULL mvn test output here]
+
+For each failing test:
+1. Identify the ROOT CAUSE (not just "assertion failed" — why does it fail?)
+   Common causes:
+   - Test data no longer matches production schema
+   - @Ignore removed without investigating why it was ignored
+   - Missing H2 compatibility (PostgreSQL-specific SQL in schema.sql)
+   - JwtAuthFilter security config changed but test setup not updated
+   - Missing X-Consumer-ID header for Apigee-pattern endpoints in test
+
+2. FIX the test (not the production code) unless the production code is clearly wrong
+   DO NOT change production behavior to make tests pass
+
+3. If the test is testing the wrong thing (e.g., testing a since-changed behavior):
+   - Add comment: // BEHAVIOR CHANGED: {description} - rewritten {date}
+   - Update assertion to match current correct behavior
+   - Do NOT delete the test
+
+4. If a test was @Ignored and you don't know why — keep it @Ignored:
+   - Add comment: // INVESTIGATE: still ignored after review {date} — see JIRA [ticket]
+
+Show each fix as a diff. Do not batch fixes — one failing test at a time.</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DEPLOY ═══ -->
+<section class="sec p-red" id="deploy">
+  <div class="sh">
+    <div class="si">🚀</div>
+    <div>
+      <div class="st-h">Deployment — Copilot for GKE + Apigee Pipeline</div>
+      <div class="ss">Prompts for generating and validating deployment artifacts</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 17 — Generate Complete K8s Manifest Set</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — full manifest generation</div>
+      <pre><span class="ph">@workspace</span> <span class="pn">#file:src/main/resources/application.yml</span>
+
+Generate a complete Kubernetes manifest set for this service.
+Target: GKE cluster, namespace: staging (then production with same structure).
+
+Generate these files:
+<span class="ps">k8s/deployment.yaml</span> — Deployment with:
+  - image: gcr.io/[PROJECT_ID]/[service-name]:${IMAGE_TAG}
+  - resources: requests(memory:256Mi, cpu:100m), limits(memory:512Mi, cpu:500m)
+  - JVM: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=${PROFILE}
+  - All env vars from ConfigMap/Secret refs (no hardcoded values)
+  - livenessProbe, readinessProbe, startupProbe on /actuator/health endpoints
+  - terminationGracePeriodSeconds: 60
+  - preStop hook: sleep 5 (allows LB to drain connections)
+
+<span class="ps">k8s/service.yaml</span> — ClusterIP service (NOT LoadBalancer — Apigee routes externally)
+  - Port 8080 (or whatever the app uses — check server.port)
+
+<span class="ps">k8s/configmap.yaml</span> — Non-sensitive config (DB URL, service URLs, feature flags)
+
+<span class="ps">k8s/hpa.yaml</span> — HorizontalPodAutoscaler
+  - minReplicas: 2, maxReplicas: 8
+  - CPU threshold: 70%
+
+<span class="ps">k8s/pdb.yaml</span> — PodDisruptionBudget
+  - minAvailable: 1 (ensures rolling updates don't kill all pods)
+
+Note: Do NOT generate K8s Secrets — those are created by CI/CD pipeline,
+never committed to git. Generate a secrets-template.txt showing required keys only.</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔎 Prompt 18 — GitHub Actions CI/CD Pipeline</div>
+    <div class="prompt-box">
+      <div class="prompt-label">Copilot Chat — CI/CD generation</div>
+      <pre><span class="ph">@workspace</span>
+
+Generate a GitHub Actions workflow for this microservice.
+Target: GKE deployment with Apigee-fronted APIs.
+
+Workflow: .github/workflows/deploy.yaml
+Triggers: push to main (auto-deploy to staging), manual workflow_dispatch (production)
+
+Jobs:
+<span class="ps">1. test</span>
+   - Java 11 setup
+   - mvn test (fail build if any test fails)
+   - Upload JaCoCo coverage report
+   - Fail if coverage < 60% on changed files
+
+<span class="ps">2. build</span>
+   - needs: test
+   - docker build -t gcr.io/$PROJECT_ID/$SERVICE:$SHA .
+   - Push to Google Artifact Registry (use Workload Identity, NOT service account JSON)
+   - Scan image with Trivy (fail on HIGH/CRITICAL CVEs)
+
+<span class="ps">3. deploy-staging</span>
+   - needs: build
+   - gcloud container clusters get-credentials staging-cluster
+   - kubectl set image deployment/$SERVICE $SERVICE=gcr.io/...
+   - kubectl rollout status (wait for rollout to complete, timeout 3min)
+   - Run smoke tests: curl https://staging.api.company.com/actuator/health
+
+<span class="ps">4. deploy-production</span>
+   - needs: deploy-staging
+   - Only on workflow_dispatch (manual trigger)
+   - Requires environment approval (GitHub Environment: production)
+   - Same steps as staging but targeting production namespace
+   - Post-deploy: run customer contract tests
+
+Use GitHub OIDC for GCP authentication (Workload Identity Federation).
+Never use service account JSON keys in workflows.</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROMPT CHEATSHEET ═══ -->
+<section class="sec p-cop" id="cheatsheet">
+  <div class="sh">
+    <div class="si">📋</div>
+    <div>
+      <div class="st-h">Prompt Cheatsheet — Quick Reference</div>
+      <div class="ss">All prompts indexed by task. Copy the prompt number and find it above.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🗂 Complete Prompt Index</div>
+    <table>
+      <tr><th>#</th><th>Prompt Name</th><th>Where to Run</th><th>Output</th><th>Run When</th></tr>
+      <tr><td><strong>1</strong></td><td>Service Identity & Stack Scan</td><td>Copilot Chat @workspace</td><td>SERVICE_PROFILE.md</td><td>First thing, per service</td></tr>
+      <tr><td><strong>2</strong></td><td>Apigee & Auth Flow Deep Scan</td><td>Copilot Chat @workspace</td><td>APIGEE_AUTH_MAP.md</td><td>After Prompt 1</td></tr>
+      <tr><td><strong>3</strong></td><td>GKE Deployment Readiness Scan</td><td>Copilot Chat + #file:k8s</td><td>GKE_READINESS.md</td><td>After Prompt 1</td></tr>
+      <tr><td><strong>4</strong></td><td>Inter-Service Dependency Scan</td><td>Copilot Chat @workspace</td><td>DEPENDENCY_MAP.md</td><td>After Prompt 1</td></tr>
+      <tr><td><strong>5</strong></td><td>Auth Gap Analysis</td><td>Copilot Chat @workspace</td><td>Security findings</td><td>Before any code changes</td></tr>
+      <tr><td><strong>6</strong></td><td>Fix K8s Manifests</td><td>Copilot Chat + #file:k8s</td><td>Updated YAML</td><td>Sprint 0</td></tr>
+      <tr><td><strong>7</strong></td><td>ConfigMap & Secret Audit</td><td>Copilot Chat + #file:resources</td><td>Externalized config</td><td>Sprint 0</td></tr>
+      <tr><td><strong>8</strong></td><td>Reverse Stories</td><td>Copilot Chat @workspace</td><td>Type A stories (Jira)</td><td>Story generation phase</td></tr>
+      <tr><td><strong>9</strong></td><td>Gap Stories</td><td>Copilot Chat @workspace</td><td>Type B stories (Jira)</td><td>Story generation phase</td></tr>
+      <tr><td><strong>10</strong></td><td>Add Input Validation</td><td>Copilot Inline Ctrl+I</td><td>@Valid + DTO annotations</td><td>P1 gap fix</td></tr>
+      <tr><td><strong>11</strong></td><td>Fix HTTP Client Timeout</td><td>Copilot Chat #selection</td><td>Timeout + error handling</td><td>P2 reliability fix</td></tr>
+      <tr><td><strong>12</strong></td><td>Fix JVM Memory for GKE</td><td>Copilot Chat #file:Dockerfile</td><td>Corrected JVM flags</td><td>P1 GKE fix</td></tr>
+      <tr><td><strong>13</strong></td><td>Fix PII Logging</td><td>Copilot Chat @workspace</td><td>Sanitized log statements</td><td>P1 security fix</td></tr>
+      <tr><td><strong>14</strong></td><td>Generate Unit Tests</td><td>Copilot Chat + open class</td><td>JUnit 4 test class</td><td>Coverage phase</td></tr>
+      <tr><td><strong>15</strong></td><td>Controller Tests + Apigee Headers</td><td>Copilot Chat + #file:Controller</td><td>MockMvc test class</td><td>Coverage phase</td></tr>
+      <tr><td><strong>16</strong></td><td>Fix Failing Tests</td><td>Copilot Chat + paste mvn output</td><td>Fixed test classes</td><td>Sprint 0 cleanup</td></tr>
+      <tr><td><strong>17</strong></td><td>Generate K8s Manifests</td><td>Copilot Chat @workspace</td><td>5 manifest files</td><td>Deploy prep</td></tr>
+      <tr><td><strong>18</strong></td><td>GitHub Actions CI/CD Pipeline</td><td>Copilot Chat @workspace</td><td>.github/workflows/deploy.yaml</td><td>CI/CD setup</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">⚡ Per-Service Execution Order</div>
+    <div class="ribbon">
+      <div class="rb"><div class="rb-n">Day 1</div><div class="rb-t" style="color:var(--c1)">Setup</div><div class="rb-d">copilot-instructions.md per service</div></div>
+      <div class="rb"><div class="rb-n">Day 1</div><div class="rb-t" style="color:var(--c4)">Scan</div><div class="rb-d">Prompts 1–4 per service</div></div>
+      <div class="rb"><div class="rb-n">Day 2</div><div class="rb-t" style="color:var(--c5)">Security</div><div class="rb-d">Prompts 5, 12, 13</div></div>
+      <div class="rb"><div class="rb-n">Day 3</div><div class="rb-t" style="color:var(--c2)">Stories</div><div class="rb-d">Prompts 8–9 → Jira</div></div>
+      <div class="rb"><div class="rb-n">Sprint 0</div><div class="rb-t" style="color:var(--c6)">P1 Fixes</div><div class="rb-d">Prompts 6,7,10,11,16</div></div>
+      <div class="rb"><div class="rb-n">Sprint 1+</div><div class="rb-t" style="color:var(--c3)">Tests + Deploy</div><div class="rb-d">Prompts 14,15,17,18</div></div>
+    </div>
+  </div>
+
+  <div class="alert al-green">
+    <span class="al-ico">✅</span>
+    <div><strong>Copilot + Claude Code together:</strong> Use Copilot for interactive, file-level work inside VS Code (inline fixes, single-file tests, K8s manifest review). Use Claude Code CLI for cross-service batch scans, orchestrating the full pipeline, and running characterization test generation across multiple services at once. They are complementary, not competing.</div>
+  </div>
+</section>
+
+<hr>
+<div class="final-box">
+  <div class="fb-title">📍 Start Tomorrow — Per Service Checklist</div>
+  <pre># For EACH microservice (repeat this sequence):
+
+# STEP 1: Setup (5 min)
+mkdir -p .github && touch .github/copilot-instructions.md
+# → Fill in the template from this guide for THIS specific service
+
+# STEP 2: Open in VS Code
+code .   # opens workspace for this service only
+
+# STEP 3: Run the 4 scan prompts in Copilot Chat (60-90 min total)
+# Prompt 1 → save output to SERVICE_PROFILE.md
+# Prompt 2 → save output to APIGEE_AUTH_MAP.md
+# Prompt 3 → save output to GKE_READINESS.md
+# Prompt 4 → save output to DEPENDENCY_MAP.md
+
+# STEP 4: Run security audit (Prompt 5) — fix all P1 findings before anything else
+
+# STEP 5: Run story generation (Prompts 8 + 9) → create Jira tickets
+
+# STEP 6: Sprint 0 — fix only P1 gaps using Prompts 10-13 + 16
+# NO new features until failing tests are fixed and P1 gaps closed
+
+# Copilot will understand your GKE + Apigee architecture if you:
+# ✓ Have copilot-instructions.md in every repo
+# ✓ Include k8s/ manifests in the workspace
+# ✓ Run scans before asking for fixes
+# ✓ Always use @workspace for cross-file questions</pre>
+</div>
+
+</div>
+</body>
+</html>
