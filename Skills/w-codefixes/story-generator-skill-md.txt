@@ -1,0 +1,212 @@
+---
+name: story-generator
+description: >
+  Reads the .claude/context/ files produced by code-archaeology and generates
+  Jira-ready user stories: Type A (reverse — documents existing behaviour as
+  stories for regression baseline) and Type B (gap — missing tests, security
+  issues, GKE misconfig, tech debt). Use whenever someone says: "create
+  stories", "generate Jira tickets", "break down this epic", "what stories
+  should we write for service X", "create backlog from code", "plan sprint",
+  "estimate this epic", "prioritise backlog", or "what P1 work exists".
+  If .claude/context/ files are missing, instruct user to run code-archaeology
+  first. Works for Spring Boot, React UI, shared JAR repos.
+---
+
+# Story Generator Skill
+
+Reads `.claude/context/` files → generates Jira-ready Type A + B stories.
+
+---
+
+## Step 1 — Load Context (minimum needed)
+
+| Question | Files to load |
+|----------|--------------|
+| All stories for a service | apis.md + deps.md + auth.md + tests.md + gke.md |
+| Type A only (existing behaviour) | apis.md + auth.md |
+| Type B only (gaps/fixes) | deps.md + tests.md + gke.md + auth.md |
+| Single story estimate | apis.md + deps.md |
+
+If `.claude/context/` directory does not exist:
+```
+⚠️ No archaeology docs found.
+Run code-archaeology skill first:
+  "Scan this repo and create the context files"
+Then re-run story generation.
+```
+
+---
+
+## Step 2 — Type A Stories (Existing Behaviour)
+
+Source: `apis.md` API Surface table.
+
+For each endpoint row in the API Surface table:
+
+```markdown
+## {US-E###} [Existing] {feature name}
+
+**Story**
+As a {actor — infer from endpoint path + auth pattern},
+I can {action — from HTTP method + path},
+So that {business purpose — infer from naming}.
+
+**Context**
+Handler: {ControllerClass.method}
+Auth:    {BASIC_AUTH_VIA_APIGEE | JWT | PUBLIC}  ← from auth.md
+Risk:    {HIGH if in Customer API Contracts table | MED | LOW}
+
+**Acceptance Criteria**
+- Given {input constraints from DTO or validation rules}
+- When {HTTP method} {path} is called
+- Then HTTP {status} returned with {response shape}
+- And {primary error case} returns {error code from patterns.md format}
+
+**Points:** {1|2|3|5|8} | **Risk:** HIGH/MED/LOW | **Sprint:** Baseline
+```
+
+**Combine** endpoints into one story when: same entity + same controller + same auth.
+
+---
+
+## Step 3 — Type B Stories (Gaps)
+
+### P1 — Security (Sprint 0)
+
+Source: `auth.md` Security Rules violations.
+
+```markdown
+## {US-G###} [Fix] {issue name}  — P1 SECURITY
+
+**Problem:** {1 sentence from auth.md finding}
+**File:** {location if determinable}
+**Risk:** {what breaks if this is not fixed}
+
+**Acceptance Criteria**
+- Given the fix is applied
+- When {scenario}
+- Then {correct secure behaviour}
+- And existing tests pass (zero regression)
+
+**Points:** {2-3} | **Sprint:** Sprint 0 | **Touches Customer API:** YES/NO
+```
+
+### P1 — GKE (Sprint 0)
+
+Source: `gke.md` Readiness Status ❌ rows.
+
+```markdown
+## {US-G###} [Fix] {GKE issue}  — P1 GKE
+
+**Problem:** {from gke.md ❌ check}
+**Risk:** OOM crash / failed probe / secret exposure
+
+**Acceptance Criteria**
+- Given fix applied
+- When pod starts in GKE
+- Then {specific check} passes ✅
+
+**Points:** 1-2 | **Sprint:** Sprint 0
+```
+
+### P1 — Failing Tests (Sprint 0)
+
+Source: `tests.md` Currently Failing Tests table.
+
+```markdown
+## {US-G###} [Fix] Failing tests in {ClassName}  — P1
+
+**Tests failing:** {n} — list from tests.md
+**Priority:** Must fix before any new features (broken baseline)
+
+**Acceptance Criteria**
+- All tests in {ClassName} pass (mvn test shows 0 failures)
+- No @Ignore added as workaround
+- Root cause documented in test comment
+
+**Points:** {1-3} | **Sprint:** Sprint 0
+```
+
+### P2 — Test Coverage (Sprint 1–2)
+
+Source: `tests.md` Zero-Coverage Classes table, sorted by Customer Risk.
+
+```markdown
+## {US-G###} [Add] Tests for {ClassName}  — P2
+
+**Coverage gap:** {ClassName} has 0% coverage
+**Customer risk:** HIGH/MED/LOW
+
+**Acceptance Criteria**
+- Unit tests covering: happy path, not-found, validation failure, auth failure
+- Coverage for {ClassName} reaches 60%+
+- JUnit {version from tests.md} — extends {base class}
+
+**Points:** 2-5 | **Sprint:** Sprint 1-2
+```
+
+### P2 — Reliability (Sprint 1–2)
+
+Source: `deps.md` Outbound Calls with empty Timeout or Circuit Breaker column.
+
+```markdown
+## {US-G###} [Add] Timeout + error handling for {target} call  — P2
+
+**Risk:** No timeout → thread pool starvation if {target} is slow
+**Points:** 2-3 | **Sprint:** Sprint 1-2
+```
+
+### P3 — Tech Debt (Dedicated Sprint)
+
+Source: `stack.md` outdated dependencies + `patterns.md` deprecated patterns.
+
+```markdown
+## {US-G###} [Upgrade] {library} from {old} to {new}  — P3
+
+**Note:** Framework major version upgrades = dedicated sprint only.
+Never bundle with feature work.
+
+**Points:** 5-13 | **Sprint:** Dedicated
+```
+
+---
+
+## Step 4 — Dependency Order
+
+```markdown
+## Sprint Dependency Rules
+
+Sprint 0 (P1 only — no new features until complete):
+  → Fix failing tests first (baseline must be green)
+  → Fix P1 security gaps
+  → Fix P1 GKE issues
+
+Sprint 1-2:
+  → P2 test coverage (write tests BEFORE implementing features that touch same class)
+  → P2 reliability fixes
+  → New feature stories
+
+Dedicated sprint (never bundled):
+  → P3 framework upgrades
+  → P3 major refactors
+```
+
+---
+
+## Step 5 — Summary Table
+
+```markdown
+## Story Summary — {service-name}
+
+| Type | Stories | Points | Sprint |
+|------|---------|--------|--------|
+| A — Baseline (existing) | {n} | {n} | Baseline |
+| B — P1 Security | {n} | {n} | Sprint 0 |
+| B — P1 GKE | {n} | {n} | Sprint 0 |
+| B — P1 Failing tests | {n} | {n} | Sprint 0 |
+| B — P2 Test coverage | {n} | {n} | Sprint 1-2 |
+| B — P2 Reliability | {n} | {n} | Sprint 1-2 |
+| B — P3 Tech debt | {n} | {n} | Dedicated |
+
+Sprint 0 total: {n} stories / {n} points (recommended max: 20pt)
+```

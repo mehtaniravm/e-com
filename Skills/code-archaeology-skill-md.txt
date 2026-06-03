@@ -1,0 +1,872 @@
+---
+name: code-archaeology
+description: >
+  Scans a production repo (Spring Boot, React/TypeScript, shared JAR, or
+  hybrid) and writes a set of small, focused markdown files that permanently
+  train BOTH GitHub Copilot AND Claude Code on this service. Produces and
+  wires up all native agent instruction files so both tools auto-load context
+  on every session. Use whenever someone says: "scan this repo", "document
+  this service", "run archaeology", "train Copilot on this", "train Claude on
+  this", "create CLAUDE.md", "create copilot instructions", "docs are stale",
+  "update docs after merge", "analyze this codebase", or "what does this
+  service do". Works on Spring Boot Java services, React/TypeScript UIs,
+  shared JARs, and monorepos containing any combination.
+---
+
+# Code Archaeology Skill
+
+Writes **many small focused files** across tool-native locations so both
+GitHub Copilot and Claude Code automatically load the right context on every
+session — without any manual prompting by the developer. Also generates a
+`CodeFixes/` folder: one file per risky/incorrect code finding, with exact
+file path, line number, current signature, and suggested replacement code.
+
+---
+
+## Output File Map
+
+```
+repo-root/
++-- CLAUDE.md                          ? Claude Code auto-reads (root entry)
++-- AGENTS.md                          ? Shared agent spec (Copilot + Claude + others)
++-- .claude/
+¦   +-- agents/
+¦   ¦   +-- archaeologist.md           ? Claude sub-agent: understands this repo
+¦   ¦   +-- reviewer.md                ? Claude sub-agent: reviews PRs/changes
+¦   ¦   +-- story-helper.md            ? Claude sub-agent: estimates stories
+¦   +-- context/
+¦       +-- stack.md                   ? Tech stack (tiny, always loaded)
+¦       +-- patterns.md                ? Code patterns to follow
+¦       +-- auth.md                    ? Auth model (Apigee + JWT)
+¦       +-- gke.md                     ? GKE/K8s deployment config
+¦       +-- apis.md                    ? API surface + data model
+¦       +-- deps.md                    ? Inter-service dependencies
+¦       +-- tests.md                   ? Test state + conventions
++-- .github/
+¦   +-- copilot-instructions.md        ? Copilot workspace auto-reads
+¦   +-- prompts/
+¦       +-- new-endpoint.prompt.md     ? Copilot: /new-endpoint task
+¦       +-- write-test.prompt.md       ? Copilot: /write-test task
+¦       +-- review-change.prompt.md    ? Copilot: /review-change task
+¦       +-- create-story.prompt.md     ? Copilot: /create-story task
++-- CodeFixes/                         ? One file per risky/incorrect finding
+    +-- _INDEX.md                      ? Summary table of all fixes, by severity
+    +-- FIX-001-{short-name}.md        ? e.g. FIX-001-missing-input-validation.md
+    +-- FIX-002-{short-name}.md        ? e.g. FIX-002-jvm-heap-oom-risk.md
+    +-- FIX-NNN-{short-name}.md        ? one file per finding
+```
+
+**Size target**: Every context/agent file under 80 lines. Each CodeFix file under 60 lines.
+
+---
+
+## Step 1 — Detect Repo Type
+
+Read in order, stop at first match per type:
+
+| File Found | Repo Type | Scan Path |
+|------------|-----------|-----------|
+| `pom.xml` | Spring Boot / Java | ? [Java Scan](#java-scan) |
+| `package.json` + `src/` with `.tsx`/`.jsx` | React UI | ? [React Scan](#react-scan) |
+| `package.json` (no React) | Node service | ? [React Scan](#react-scan) |
+| Both `pom.xml` + `package.json` | Hybrid/monorepo | ? Run both scans |
+| `*.jar` referenced in other pom.xml | Shared JAR | ? [JAR Scan](#jar-scan) |
+
+---
+
+## Step 2 — Java Scan
+
+Read in this sequence. Extract only what's listed — nothing more.
+
+1. `pom.xml` ? `artifactId`, Java version, Spring Boot version, dependency list (name+version only)
+2. `src/main/resources/application*.yml` ? `server.port`, datasource URL pattern (redact password), active profiles, feature flags
+3. All `@RestController` classes ? HTTP method, path, handler method name, auth annotation
+4. `SecurityConfig` or `WebSecurityConfigurerAdapter` ? `permitAll()` paths, filter chain
+5. `JwtAuthFilter` (or equivalent) ? header name read, claims extracted, MDC fields set
+6. All `@Entity` classes ? class name, table name, key fields (no getters), relationships
+7. `src/main/resources/db/migration/` ? count scripts, latest version number
+8. All `RestTemplate`/`WebClient`/`FeignClient` beans ? target URL config key, timeout setting
+9. `@RabbitListener`/`@KafkaListener`/`@PubSubListener` ? topic/queue names
+10. `k8s/*.yaml` or `deploy/*.yaml` ? memory limit, CPU limit, env var names, probe paths
+11. `Dockerfile` ? base image, JVM flags set, exposed port
+12. `src/test/` ? count test classes vs prod classes, JUnit version (4 or 5), `@Ignore`/`@Disabled` count
+
+---
+
+## Step 3 — React Scan
+
+1. `package.json` ? name, version, key deps (React, router, state mgmt, API client)
+2. Router config ? all route paths + page component names
+3. Auth logic ? localStorage/sessionStorage key names, token field names, AuthContext shape
+4. API client files (axios instance, fetch wrapper) ? base URL config key, auth header injection point
+5. `src/components` or `src/pages` ? 2-level component tree (pages ? direct children only)
+6. `.env.example` / `.env.sample` ? all key names (never values)
+7. `nginx.conf` or `Dockerfile` ? served port, build output directory
+
+---
+
+## Step 4 — JAR Scan
+
+1. `pom.xml` ? groupId, artifactId, current version
+2. All public classes in `src/main/java` ? public method signatures only
+3. Any consumers in sibling `pom.xml` files ? which services depend on this JAR + which version
+
+---
+
+## Step 5 — Write Files
+
+Write all files simultaneously after scanning is complete.
+
+### File 1: `CLAUDE.md` (root)
+
+Claude Code reads this file automatically at the start of every session.
+Keep it under **50 lines** — it is the index, not the content.
+
+```markdown
+# CLAUDE.md — {service-name}
+> Auto-generated by code-archaeology. Re-run when code changes significantly.
+
+## What This Repo Is
+{1-sentence description}
+Type: Spring Boot {version} | React {version} | Shared JAR | Hybrid
+Customer-facing: YES/NO | Apigee-fronted: YES/NO
+
+## Context Files (load as needed)
+- Stack & dependencies     ? .claude/context/stack.md
+- Code patterns to follow  ? .claude/context/patterns.md
+- Auth model (Apigee+JWT)  ? .claude/context/auth.md
+- GKE deployment config    ? .claude/context/gke.md
+- API surface & data model ? .claude/context/apis.md
+- Inter-service deps       ? .claude/context/deps.md
+- Test state & conventions ? .claude/context/tests.md
+
+## Sub-Agents Available
+- General repo questions   ? .claude/agents/archaeologist.md
+- PR / change review       ? .claude/agents/reviewer.md
+- Story estimation         ? .claude/agents/story-helper.md
+
+## CRITICAL — Read Before Any Change
+1. NEVER modify customer-facing APIs without human approval
+2. NEVER parse Basic Auth in service code — Apigee handles it upstream
+3. NEVER hardcode secrets — use K8s ConfigMap or Secret refs only
+4. RUN existing tests before AND after every change (zero new failures)
+5. CHECK .claude/context/deps.md before touching any shared method/class
+```
+
+---
+
+### File 2: `.claude/context/stack.md`
+
+```markdown
+# stack.md — {service-name}
+> Tech stack snapshot. Re-generate after dependency updates.
+
+## Runtime
+| Item | Value |
+|------|-------|
+| Language | Java {version} / TypeScript {version} |
+| Framework | Spring Boot {version} / React {version} |
+| Build | Maven {version} / npm {version} |
+| Java source/target | {version} (do not change) |
+
+## Key Dependencies
+| Library | Version | Purpose |
+|---------|---------|---------|
+| spring-boot-starter-web | x.x.x | REST layer |
+| spring-boot-starter-security | x.x.x | Security filter chain |
+| spring-data-jpa | x.x.x | ORM |
+| {others found} | | |
+
+## Database
+| Item | Value |
+|------|-------|
+| Type | PostgreSQL / MySQL / H2 |
+| Schema | {name if found} |
+| Connection pool | HikariCP {version} |
+| Migrations | Flyway / Liquibase — {count} scripts, latest V{n} |
+```
+
+---
+
+### File 3: `.claude/context/patterns.md`
+
+```markdown
+# patterns.md — {service-name}
+> Existing patterns. New code MUST match these. Do not invent new patterns.
+
+## Exception Handling
+- Handler: GlobalExceptionHandler extends ResponseEntityExceptionHandler
+- Response format: `{"code":"ERR_XXX","message":"...","timestamp":"..."}`
+- Custom exceptions extend: {BaseException class name}
+
+## DTO Rules
+- Always separate: {Entity}Request (in) / {Entity}Response (out)
+- Mapping: MapStruct (NOT manual setters or ModelMapper)
+- Never expose @Entity objects directly in controllers
+
+## Logging
+- Framework: SLF4J + Logback
+- MDC fields: requestId, userId, sessionId (set by JwtAuthFilter or interceptor)
+- Pattern: `log.info("{} {}", label, value)` — never string concat in log calls
+- PII fields (email, phone, name): never log in plain text
+
+## Validation
+- On DTOs: @Valid on @RequestBody in controller
+- Constraint annotations on DTO fields (not entity fields)
+- Errors handled by GlobalExceptionHandler automatically
+
+## Transactions
+- @Transactional on Service layer ONLY
+- Never on Controller or Repository layer
+
+## Testing (see tests.md for full details)
+- JUnit {4/5} — {confirm from pom.xml — do NOT mix versions}
+- Base class: {BaseServiceTest / BaseControllerTest} — always extend it
+- Mocking: Mockito @Mock + @InjectMocks (unit) / @MockBean (integration)
+```
+
+---
+
+### File 4: `.claude/context/auth.md`
+
+```markdown
+# auth.md — {service-name}
+> Authentication model. Critical for all API work.
+
+## Gateway: Apigee API Gateway
+All external APIs pass through Apigee before reaching this service.
+
+## Pattern A — Basic Auth (most customer APIs)
+```
+Customer ? [Basic Auth] ? Apigee validates ? strips header ? Service
+Service receives: X-Consumer-ID: {customer-id}  (NOT Authorization header)
+```
+Rule: Service code NEVER parses Basic Auth. Read X-Consumer-ID for identity.
+
+## Pattern B — JWT Passthrough (admin / partner APIs)
+```
+Customer ? [Bearer JWT] ? Apigee validates signature ? forwards JWT ? Service
+Service receives: Authorization: Bearer {token}
+```
+Rule: JwtAuthFilter validates locally. Claims: {userId, roles[], sessionId, exp}
+MDC: sets requestId, userId, sessionId on every request.
+
+## Public Endpoints (no auth)
+{List from SecurityConfig permitAll() or @PublicEndpoint scan}
+- /actuator/health
+- /actuator/health/liveness
+- /actuator/health/readiness
+- {others found}
+
+## Auth Endpoint Map
+| Endpoint Pattern | Pattern | Header Service Receives |
+|-----------------|---------|------------------------|
+| /api/v1/...     | A or B  | X-Consumer-ID or Bearer |
+
+## Security Rules
+- NEVER add .basic() or BasicAuthenticationFilter to SecurityConfig
+- NEVER log X-Consumer-ID or JWT token values (use MDC only)
+- NEVER disable JwtAuthFilter for non-public endpoints
+- CORS: no wildcard (*) origins in production config
+```
+
+---
+
+### File 5: `.claude/context/gke.md`
+
+```markdown
+# gke.md — {service-name}
+> GKE deployment config. Use for all infrastructure work.
+
+## Cluster
+| Item | Value |
+|------|-------|
+| Project | {gcp-project-id or config key} |
+| Cluster | production-cluster / staging-cluster |
+| Namespace | production / staging |
+| Image registry | gcr.io/{project}/{service} |
+
+## Resource Config
+| Item | Value |
+|------|-------|
+| Memory request | {value}Mi |
+| Memory limit | {value}Mi |
+| CPU request | {value}m |
+| CPU limit | {value}m |
+| JVM -Xmx | {75% of memory limit}m |
+| JVM -Xms | {50% of memory limit}m |
+| JVM flags | -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 |
+
+## Health Probes
+| Probe | Path | Initial Delay | Period |
+|-------|------|--------------|--------|
+| Liveness | /actuator/health/liveness | 30s | 10s |
+| Readiness | /actuator/health/readiness | 15s | 5s |
+| Startup | /actuator/health | 10s | 5s (fail:10) |
+
+## Scaling
+| Item | Value |
+|------|-------|
+| Min replicas | 2 (prod) / 1 (staging) |
+| Max replicas | {from HPA} |
+| Scale trigger | CPU 70% |
+
+## Config Externalization
+| Key Name | Source | Sensitive? |
+|----------|--------|-----------|
+| DB_URL | ConfigMap: {name} | No |
+| DB_PASSWORD | Secret: {name} | YES |
+| JWT_SECRET | Secret: {name} | YES |
+| {others found} | | |
+
+## GKE Readiness Status
+| Check | Status | Notes |
+|-------|--------|-------|
+| Liveness probe exists | ?/??/? | |
+| JVM heap = 75% limit | ?/??/? | limit={x} Xmx={y} |
+| No hardcoded secrets | ?/??/? | |
+| PodDisruptionBudget | ?/??/? | |
+| Graceful shutdown | ?/??/? | terminationGrace={n}s |
+```
+
+---
+
+### File 6: `.claude/context/apis.md`
+
+```markdown
+# apis.md — {service-name}
+> API surface and data model. Source of truth for endpoints and entities.
+
+## API Surface
+| Method | Path | Handler | Auth | Customer? | Status |
+|--------|------|---------|------|-----------|--------|
+| GET | /api/v1/users/{id} | UserController.getById | Pattern-A | YES | Stable |
+| POST | /api/v1/users | UserController.create | Pattern-B | YES | Stable |
+| {fill from scan} | | | | | |
+
+## Customer API Contracts (DO NOT BREAK)
+| Endpoint | Consumer | SLA | Risk |
+|----------|----------|-----|------|
+| /api/v1/... | CustomerA | 200ms | HIGH |
+
+## Data Model
+| Entity | Table | Key Fields | Relations |
+|--------|-------|-----------|-----------|
+| User | users | id,email,role,status | roles(1:N) |
+| {fill from scan} | | | |
+
+## Apigee Routes (if known)
+| Apigee Proxy Path | Backend Path | Auth Type |
+|-------------------|-------------|-----------|
+```
+
+---
+
+### File 7: `.claude/context/deps.md`
+
+```markdown
+# deps.md — {service-name}
+> Dependencies. Check before changing any shared code.
+
+## Outbound Service Calls
+| Target | URL Config Key | Protocol | Timeout | Circuit Breaker | Risk |
+|--------|---------------|----------|---------|-----------------|------|
+
+## Message Bus
+| Direction | Topic/Queue | Type | DLQ? |
+|-----------|------------|------|------|
+| Publishes | order.created | RabbitMQ | YES |
+| Consumes | inventory.updated | RabbitMQ | YES |
+
+## Shared Libraries
+| Library | Version | Change impact |
+|---------|---------|--------------|
+| common-security | 2.1.0 | All services — never change alone |
+
+## Risk Summary
+| Risk | Level | Detail |
+|------|-------|--------|
+| Customer API breakage | HIGH | /api/v1/** used by CustomerA |
+| Shared DB with other services | MED/NO | {detail} |
+| Sync chain (A?B?C no fallback) | HIGH/NO | {detail} |
+```
+
+---
+
+### File 8: `.claude/context/tests.md`
+
+```markdown
+# tests.md — {service-name}
+> Test state and conventions. Read before writing any test.
+
+## Current State
+| Metric | Value |
+|--------|-------|
+| JUnit version | 4 / 5 (do NOT mix) |
+| Test framework | Mockito |
+| Test DB | H2 in-memory / TestContainers |
+| Base test class | BaseServiceTest / BaseControllerTest |
+| Prod classes | {n} |
+| Test classes | {n} |
+| Coverage estimate | ~{n}% |
+| Currently failing | {n} |
+| @Ignored / @Disabled | {n} |
+
+## How To Write A Unit Test
+1. Extend BaseServiceTest
+2. Annotate: @RunWith(MockitoJUnitRunner.class) [JUnit4] OR @ExtendWith [JUnit5]
+3. @Mock dependencies; @InjectMocks subject
+4. Name: methodName_condition_expectedResult
+
+## How To Write A Controller Test
+1. @WebMvcTest(XController.class) — NOT @SpringBootTest
+2. @MockBean all @Service dependencies
+3. Pattern A endpoints: add .header("X-Consumer-ID","test-id")
+4. Pattern B endpoints: add .header("Authorization","Bearer "+TestJwt.valid())
+5. Assert status + JSON body structure (not exact strings unless contracted)
+
+## Zero-Coverage Classes (highest priority to test first)
+| Class | Type | Customer Risk |
+|-------|------|--------------|
+
+## Currently Failing Tests
+| Class | Method | Error |
+|-------|--------|-------|
+```
+
+---
+
+### File 9: `.claude/agents/archaeologist.md`
+
+This is a Claude sub-agent. Claude Code reads files in `.claude/agents/` and
+can invoke them as specialised agents.
+
+```markdown
+# Archaeologist Agent — {service-name}
+
+You are the expert on this specific repository. You have deep knowledge of its
+architecture, patterns, auth model, and all decisions made over its lifetime.
+
+## Your Knowledge Base
+Load these files to answer questions (load only what the question needs):
+- Stack questions        ? .claude/context/stack.md
+- Pattern questions      ? .claude/context/patterns.md
+- Auth / security        ? .claude/context/auth.md
+- GKE / deployment       ? .claude/context/gke.md
+- API / entity questions ? .claude/context/apis.md
+- Dependency questions   ? .claude/context/deps.md
+- Test questions         ? .claude/context/tests.md
+
+## Answer Rules
+1. Answer in first sentence — never bury the answer
+2. Quote exact class names, config keys, header names from the docs
+3. For "is it safe to change X": load deps.md + auth.md, give HIGH/MED/LOW + reason
+4. If docs don't cover it: say "Not in docs — check {specific file:line}"
+5. Never invent. Never guess. If unsure, say so.
+6. Add ?? if last-updated date in root CLAUDE.md is > 90 days ago
+```
+
+---
+
+### File 10: `.claude/agents/reviewer.md`
+
+```markdown
+# Reviewer Agent — {service-name}
+
+You review code changes against the standards of THIS specific service.
+
+## Before Reviewing, Load
+- .claude/context/patterns.md  (coding standards)
+- .claude/context/auth.md      (security rules)
+- .claude/context/deps.md      (blast radius check)
+
+## Review Checklist
+- [ ] Follows patterns.md (exception format, DTO rules, logging)
+- [ ] No Basic Auth parsing added (auth.md rule)
+- [ ] No secrets hardcoded (gke.md rule)
+- [ ] No customer API contract broken (apis.md)
+- [ ] @Valid on new @RequestBody params
+- [ ] @Transactional only on service layer
+- [ ] Tests added for new code (matching JUnit version in tests.md)
+- [ ] No PII in log statements
+- [ ] If touching deps.md shared methods: flag for extra review
+```
+
+---
+
+### File 11: `.claude/agents/story-helper.md`
+
+```markdown
+# Story Helper Agent — {service-name}
+
+You estimate and write user stories for THIS service using its docs.
+
+## Load Before Estimating
+- .claude/context/apis.md   (existing endpoint complexity reference)
+- .claude/context/deps.md   (risk multiplier)
+- .claude/context/auth.md   (auth label for each story)
+
+## Story Point Scale
+| Points | Signal |
+|--------|--------|
+| 1 | Config/label change, no logic |
+| 2 | Simple CRUD, 1 entity, no business rules |
+| 3 | Standard feature, validation + service layer |
+| 5 | Business rules, multi-entity, or security check |
+| 8 | Cross-service, complex UI flow, or migration needed |
+| 13 | Unclear scope — split before estimating |
+
+## Story Output Format
+Title: [Existing/Fix/Add/Upgrade] {name}
+Auth: BASIC_AUTH_VIA_APIGEE | JWT | PUBLIC
+Risk: HIGH (customer contract) | MED (internal dep) | LOW
+Acceptance Criteria: max 5 bullets, Given/When/Then
+Points: {n} | Priority: P1/P2/P3 | Sprint: 0/1-2/Dedicated
+```
+
+---
+
+### File 12: `.github/copilot-instructions.md`
+
+GitHub Copilot reads this file automatically for every suggestion in this workspace.
+**Maximum 80 lines. No prose. Tables and bullets only.**
+
+```markdown
+# Copilot Instructions — {service-name}
+<!-- Auto-generated by code-archaeology. Update with: "refresh copilot instructions" -->
+
+## This Service
+{1-sentence description} | Java {v} + Spring Boot {v} | GKE + Apigee
+
+## Auth Rules (read before any API/security work)
+- Pattern A: Apigee validates Basic Auth ? service receives X-Consumer-ID ONLY
+- Pattern B: Apigee forwards JWT ? JwtAuthFilter validates locally
+- NEVER parse Basic Auth in service code
+- Public endpoints: /actuator/**, {others}
+
+## Code Patterns (match exactly — do not invent new ones)
+| What | How | Example |
+|------|-----|---------|
+| Exceptions | GlobalExceptionHandler, {code,msg,ts} format | GlobalExceptionHandler.java |
+| DTOs | Separate Request/Response, MapStruct mapper | UserRequest / UserResponse |
+| Logging | SLF4J, MDC context, no PII in messages | - |
+| Tests | JUnit {4/5}, Mockito, extend BaseServiceTest | BaseServiceTest.java |
+| Transactions | @Transactional on Service only | - |
+
+## GKE Config
+| Memory limit | JVM -Xmx | Namespace | Min replicas |
+|-------------|----------|-----------|--------------|
+| {limit}Mi | {Xmx}m | production | 2 |
+
+## NEVER DO
+- Hardcode DB passwords, JWT secrets, API keys ? use K8s Secret refs
+- Add System.out.println ? use SLF4J log only
+- Skip @Valid on @RequestBody ? always validate inputs
+- Use RestTemplate for NEW code ? use WebClient
+- Log email/phone/name in plain text ? PII must be masked
+
+## Customer APIs (do not change response structure)
+{list from apis.md customer contracts — endpoint + consumer name}
+
+## Danger Zones (flag for human review)
+{list from deps.md risk summary}
+```
+
+---
+
+### Files 13a–13d: `.github/prompts/*.prompt.md`
+
+Copilot custom prompts — accessible via `/` slash commands in VS Code Copilot Chat.
+
+**`new-endpoint.prompt.md`**
+```markdown
+---
+mode: agent
+description: Add a new REST endpoint following this service's patterns
+---
+Add a new endpoint to ${input:What endpoint? e.g. GET /api/v1/orders/{id}}.
+
+Follow patterns in .claude/context/patterns.md exactly:
+1. Create DTO: ${input:Entity name}Request + ${input:Entity name}Response in dto/
+2. MapStruct mapper in mapper/
+3. Service method with @Transactional
+4. Controller method — match existing handler style
+5. Auth: ${input:Auth type: BASIC_AUTH_VIA_APIGEE or JWT or PUBLIC}
+   - If BASIC_AUTH_VIA_APIGEE: read X-Consumer-ID header (do not parse Basic Auth)
+   - If JWT: JwtAuthFilter handles it — add @PreAuthorize if role needed
+   - If PUBLIC: add path to SecurityConfig permitAll()
+6. @Valid on @RequestBody
+7. Unit test + controller test (see .claude/context/tests.md for conventions)
+```
+
+**`write-test.prompt.md`**
+```markdown
+---
+mode: agent
+description: Write a test for a class in this service
+---
+Write tests for ${input:Class name to test}.
+
+Read .claude/context/tests.md first for:
+- JUnit version (do NOT guess — must match existing tests)
+- Base test class to extend
+- Test DB type (H2 or TestContainers)
+
+For controller tests:
+- Use @WebMvcTest (not @SpringBootTest)
+- Pattern A endpoint: .header("X-Consumer-ID","test-consumer-123")
+- Pattern B endpoint: .header("Authorization","Bearer "+TestJwt.valid("ROLE"))
+
+Cover: happy path, not-found, validation failure, auth failure, downstream failure.
+Name: methodName_condition_expectedResult
+```
+
+**`review-change.prompt.md`**
+```markdown
+---
+mode: agent
+description: Review a code change against this service's standards
+---
+Review the selected code change.
+
+Check against .claude/context/patterns.md and .claude/context/auth.md:
+- Does it follow exception format {code, message, timestamp}?
+- Any Basic Auth parsing? (not allowed — Apigee handles it)
+- Any hardcoded secrets? (must be ConfigMap/Secret refs)
+- @Valid on @RequestBody?
+- @Transactional only on Service layer?
+- PII (email/phone) in log statements?
+- Tests added for new behaviour?
+
+Flag each violation with: SEVERITY (P1/P2/P3) + FILE:LINE + what to fix.
+```
+
+**`create-story.prompt.md`**
+```markdown
+---
+mode: agent
+description: Create a Jira user story for a feature in this service
+---
+Create a user story for: ${input:What feature or fix?}
+
+Read .claude/context/apis.md to find similar existing endpoints for sizing.
+Read .claude/context/deps.md to assess risk.
+Read .claude/context/auth.md for auth label.
+
+Output:
+Title: [Existing/Fix/Add] {name}
+User Story: As a {actor}, I can {action}, So that {benefit}
+Auth: BASIC_AUTH_VIA_APIGEE | JWT | PUBLIC
+Acceptance Criteria: 3-5 Given/When/Then bullets
+Story Points: {1/2/3/5/8} — justify against similar endpoints in apis.md
+Risk: HIGH/MED/LOW
+Priority: P1/P2/P3
+Touches Customer API: YES/NO
+```
+
+---
+
+### File: `AGENTS.md` (root) — Shared Agent Spec for ALL Tools
+
+`AGENTS.md` is the emerging open standard read by GitHub Copilot, Claude Code,
+Cursor, and other agents. Write it at the repo root. Keep under **60 lines**.
+It points both tools at the same context files so they share one brain.
+
+```markdown
+# AGENTS.md — {service-name}
+> Shared agent instructions. Read by GitHub Copilot, Claude Code, and other AI agents.
+> Auto-generated by code-archaeology. _Last generated: {date}_
+
+## Project
+{1-sentence description} · Java {v} + Spring Boot {v} / React {v} · GKE + Apigee
+
+## Where Context Lives (both Copilot and Claude load these)
+| Topic | File |
+|-------|------|
+| Tech stack | .claude/context/stack.md |
+| Code patterns | .claude/context/patterns.md |
+| Auth (Apigee + JWT) | .claude/context/auth.md |
+| GKE deployment | .claude/context/gke.md |
+| API surface | .claude/context/apis.md |
+| Dependencies | .claude/context/deps.md |
+| Tests | .claude/context/tests.md |
+| Pending code fixes | CodeFixes/_INDEX.md |
+
+## Build & Test Commands
+- Build: `mvn clean package` / `npm run build`
+- Test:  `mvn test` / `npm test`
+- Run local: `mvn spring-boot:run` / `npm start`
+
+## Hard Rules (both tools must follow)
+1. NEVER modify customer-facing APIs without human approval
+2. NEVER parse Basic Auth in service code — Apigee handles it
+3. NEVER hardcode secrets — use K8s ConfigMap/Secret refs
+4. ALWAYS run tests before and after changes (zero new failures)
+5. ALWAYS match existing patterns in .claude/context/patterns.md
+6. CHECK CodeFixes/ before editing flagged files — known issues are documented there
+
+## Pending Fixes
+{n} code issues found — see CodeFixes/_INDEX.md ({x} P1, {y} P2, {z} P3)
+```
+
+Note: `.github/copilot-instructions.md` and `CLAUDE.md` already point to the
+same `.claude/context/` files, so all three entry points stay in sync.
+
+---
+
+## Step 5b — Generate CodeFixes
+
+While scanning, collect every finding where code is **incorrect, risky, or
+could break functionality if changed carelessly**. Write ONE file per finding
+into `CodeFixes/`. This is separate from documentation — these are actionable
+fix suggestions with exact code.
+
+### What qualifies as a CodeFix
+
+| Category | Examples |
+|----------|----------|
+| Security | Missing `@Valid`, Basic Auth parsed in service, secret hardcoded, PII logged |
+| Reliability | HTTP call with no timeout, no circuit breaker, unbounded query |
+| GKE | JVM heap > 75% of container limit, missing probe, `latest` image tag in prod |
+| Correctness | N+1 query, missing `@Transactional` on multi-write method, swallowed exception |
+| Breaking-risk | Public method signature used by 4+ callers, customer API response shape change |
+
+### CodeFix file format — `CodeFixes/FIX-NNN-{short-name}.md`
+
+```markdown
+# FIX-{NNN}: {short title}
+> Severity: P1 | P2 | P3   Category: SECURITY | RELIABILITY | GKE | CORRECTNESS | BREAKING-RISK
+> _Generated: {date}_
+
+## Location
+- File: `src/main/java/com/.../UserController.java`
+- Line: 47-52
+- Method signature: `public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest req)`
+
+## Problem
+{1-2 sentences — what is wrong and why it matters}
+
+## Risk if Unhandled
+{What breaks: e.g. "Unvalidated input reaches DB layer — injection / bad-data risk.
+Customer-facing endpoint, so impacts CustomerA integration."}
+
+## Current Code
+```java
+@PostMapping("/users")
+public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest req) {
+    User saved = userService.create(req);
+    return ResponseEntity.ok(mapper.toResponse(saved));
+}
+```
+
+## Suggested Fix
+```java
+@PostMapping("/users")
+public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest req) {
+    User saved = userService.create(req);
+    return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(saved));
+}
+// + add constraints to UserRequest fields:
+//   @NotBlank @Email private String email;
+//   @NotNull  private RoleEnum role;
+```
+
+## Why This Fix Is Safe
+{e.g. "Adds validation only; success/error response shapes unchanged;
+GlobalExceptionHandler already returns the {code,message,timestamp} format
+for MethodArgumentNotValidException. No customer contract change."}
+
+## Verification
+- [ ] Existing tests still pass (`mvn test`)
+- [ ] Add test: `createUser_blankEmail_returns400`
+- [ ] Confirm error response matches patterns.md format
+```
+
+### CodeFixes index — `CodeFixes/_INDEX.md`
+
+```markdown
+# CodeFixes Index — {service-name}
+> _Generated: {date}_ · {total} findings
+
+## Priority Summary
+| Severity | Count | Fix in |
+|----------|-------|--------|
+| P1 | {n} | Sprint 0 (before any features) |
+| P2 | {n} | Sprint 1-2 |
+| P3 | {n} | Dedicated / backlog |
+
+## All Findings
+| ID | Severity | Category | File | Title |
+|----|----------|----------|------|-------|
+| FIX-001 | P1 | SECURITY | UserController.java:47 | Missing @Valid on createUser |
+| FIX-002 | P1 | GKE | Dockerfile:12 | JVM -Xmx512m exceeds 512Mi limit |
+| FIX-003 | P2 | RELIABILITY | OrderClient.java:30 | No timeout on order-service call |
+| {...} | | | | |
+
+## Rules for Applying Fixes
+1. P1 first — security and GKE issues block production safety
+2. One fix per PR — never batch unrelated fixes
+3. Write the verification test BEFORE applying the fix (characterization)
+4. BREAKING-RISK fixes need human approval + consumer notice
+```
+
+### CodeFix generation rules
+
+1. **One file per finding** — never combine. Keeps each reviewable + git-diffable.
+2. **Always include the real signature and line numbers** — not approximate.
+3. **Current code block must be the actual code** copied from the file.
+4. **Suggested fix must be minimal** — fix only the issue, no refactoring.
+5. **"Why safe" section is mandatory** — explains it won't break contracts.
+6. **Never auto-apply** — these are suggestions. The developer/agent applies them deliberately.
+7. **Cross-link**: each FIX file referenced in `_INDEX.md`; `_INDEX.md` referenced in `AGENTS.md`.
+
+---
+
+## Step 6 — Update vs Create
+
+```
+For each file:
+  if file exists:
+    preserve any section marked "# HUMAN NOTES" or "# MANUAL"
+    overwrite all other sections
+    update "_Last generated:_" timestamp
+  else:
+    create fresh
+```
+
+---
+
+## Step 7 — Post-Write Summary
+
+After all files written, print:
+
+```
+? Code Archaeology Complete — {service-name}
+Generated: {timestamp}
+
+CONTEXT FILES (both tools load these):
+  CLAUDE.md (root)                     ? Claude Code auto-loads
+  AGENTS.md (root)                     ? Copilot + Claude + others
+  .claude/context/ (7 files)           ? On-demand context
+  .claude/agents/ (3 files)            ? Claude sub-agents
+  .github/copilot-instructions.md      ? Copilot auto-loads
+  .github/prompts/ (4 files)           ? Copilot /slash commands
+
+CODE FIXES:
+  CodeFixes/_INDEX.md                  ? {total} findings summary
+  CodeFixes/FIX-*.md                   ? {n} P1, {n} P2, {n} P3 (one file each)
+
+COMMIT:
+  git add CLAUDE.md AGENTS.md .claude/ .github/copilot-instructions.md \
+          .github/prompts/ CodeFixes/
+  git commit -m "docs(archaeology): add AI context + code fixes [skip ci]"
+
+NEXT STEPS:
+  1. Review CLAUDE.md danger zones section — add any Claude missed
+  2. Verify .claude/context/auth.md Pattern A/B endpoint list is complete
+  3. In VS Code: open Copilot Chat ? type / ? see new slash commands
+  4. Test: ask Claude "how does auth work?" ? it should answer from auth.md
+
+??  P1 FINDINGS ({n} issues to fix before any new features):
+  {list from auth.md Security Rules violations + gke.md ? checks}
+```
