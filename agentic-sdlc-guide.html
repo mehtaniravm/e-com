@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic SDLC Team — Complete Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2335;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-mid: #94a3b8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* HEADER */
+  .hero {
+    background: linear-gradient(135deg, #0a0e17 0%, #0f1a2e 50%, #0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content:'';
+    position:absolute; top:-80px; right:-80px;
+    width:400px; height:400px;
+    background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+  }
+  .hero::after {
+    content:'';
+    position:absolute; bottom:-60px; left:30%;
+    width:300px; height:300px;
+    background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%);
+  }
+  .badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius:20px; padding:4px 12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; color:var(--accent);
+    margin-bottom:16px;
+  }
+  .hero h1 {
+    font-family:'Syne', sans-serif;
+    font-size:clamp(24px,4vw,38px);
+    font-weight:800;
+    line-height:1.15;
+    margin-bottom:12px;
+  }
+  .hero h1 span { color:var(--accent); }
+  .hero p {
+    color:var(--text-mid);
+    max-width:700px;
+    font-size:15px;
+  }
+
+  /* NAV */
+  .toc {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display:flex; gap:0; overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .toc::-webkit-scrollbar { display:none; }
+  .toc-item {
+    padding:14px 16px;
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--text-dim);
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+    transition:all 0.2s;
+    text-decoration:none;
+  }
+  .toc-item:hover { color:var(--accent); border-bottom-color:var(--accent); }
+  .toc-item.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* LAYOUT */
+  .main { max-width:1100px; margin:0 auto; padding:40px 40px 80px; }
+
+  /* PHASE CARDS */
+  .phase {
+    margin-bottom:48px;
+    scroll-margin-top:60px;
+  }
+  .phase-header {
+    display:flex; align-items:center; gap:14px;
+    margin-bottom:24px;
+  }
+  .phase-num {
+    width:40px; height:40px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px; font-weight:500;
+    flex-shrink:0;
+  }
+  .phase-title {
+    font-family:'Syne', sans-serif;
+    font-size:22px; font-weight:700;
+  }
+  .phase-sub {
+    color:var(--text-dim); font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    margin-top:2px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius:12px;
+    padding:24px;
+    margin-bottom:16px;
+  }
+  .card-title {
+    font-family:'Syne', sans-serif;
+    font-size:15px; font-weight:700;
+    margin-bottom:12px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .card-title .dot {
+    width:8px; height:8px; border-radius:50%;
+    flex-shrink:0;
+  }
+
+  /* CODE BLOCKS */
+  pre {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-radius:8px;
+    padding:16px 20px;
+    overflow-x:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    line-height:1.6;
+    margin:12px 0;
+    color:#a8d8ea;
+  }
+  code {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.12);
+    border-radius:4px;
+    padding:1px 6px;
+    color:var(--accent);
+  }
+  .comment { color:#4a6741; }
+  .keyword { color:#c792ea; }
+  .string { color:#c3e88d; }
+  .tag { color:#89ddff; }
+
+  /* STEPS */
+  .steps { list-style:none; }
+  .steps li {
+    display:flex; gap:14px;
+    padding:12px 0;
+    border-bottom:1px solid rgba(30,45,69,0.5);
+  }
+  .steps li:last-child { border-bottom:none; }
+  .step-num {
+    width:24px; height:24px; border-radius:6px;
+    background:rgba(0,212,255,0.1);
+    border:1px solid rgba(0,212,255,0.2);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; color:var(--accent);
+    flex-shrink:0; margin-top:1px;
+  }
+  .step-content strong { color:var(--text); font-weight:500; display:block; margin-bottom:3px; }
+  .step-content p { color:var(--text-mid); font-size:13px; }
+
+  /* GRIDS */
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  @media(max-width:700px) { .grid2,.grid3 { grid-template-columns:1fr; } }
+
+  /* TAGS */
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .tag-pill {
+    padding:3px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .tag-blue { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.2); color:var(--accent); }
+  .tag-purple { background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; }
+  .tag-green { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:var(--accent3); }
+  .tag-amber { background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:var(--accent4); }
+  .tag-red { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--accent5); }
+
+  /* ALERT BOX */
+  .alert {
+    border-radius:8px; padding:14px 18px;
+    margin:16px 0;
+    font-size:13px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .alert-info { background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.15); }
+  .alert-warn { background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.15); }
+  .alert-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+
+  /* DIVIDER */
+  hr { border:none; border-top:1px solid var(--border); margin:32px 0; }
+
+  /* AGENT TABLE */
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th {
+    text-align:left; padding:10px 14px;
+    background:var(--surface2);
+    color:var(--text-dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    font-weight:500;
+    border-bottom:1px solid var(--border);
+  }
+  td { padding:10px 14px; border-bottom:1px solid rgba(30,45,69,0.5); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.01); }
+
+  /* FLOW */
+  .flow {
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+    padding:20px;
+    background:var(--surface2);
+    border-radius:10px;
+    margin:12px 0;
+  }
+  .flow-node {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--text-mid);
+  }
+  .flow-arrow { color:var(--text-dim); font-size:16px; }
+
+  /* SECTION COLOR HELPERS */
+  .c-blue .phase-num { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.2); color:var(--accent); }
+  .c-purple .phase-num { background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; }
+  .c-green .phase-num { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:var(--accent3); }
+  .c-amber .phase-num { background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:var(--accent4); }
+  .c-red .phase-num { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--accent5); }
+  .c-teal .phase-num { background:rgba(20,184,166,0.1); border:1px solid rgba(20,184,166,0.2); color:#2dd4bf; }
+  .c-pink .phase-num { background:rgba(236,72,153,0.1); border:1px solid rgba(236,72,153,0.2); color:#f472b6; }
+
+  .c-blue .card-title .dot { background:var(--accent); }
+  .c-purple .card-title .dot { background:#a78bfa; }
+  .c-green .card-title .dot { background:var(--accent3); }
+  .c-amber .card-title .dot { background:var(--accent4); }
+  .c-red .card-title .dot { background:var(--accent5); }
+  .c-teal .card-title .dot { background:#2dd4bf; }
+  .c-pink .card-title .dot { background:#f472b6; }
+
+  ul.bullets { padding-left:18px; }
+  ul.bullets li { margin-bottom:6px; color:var(--text-mid); font-size:13px; }
+  ul.bullets li strong { color:var(--text); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">🤖 Agentic SDLC Blueprint • v1.0</div>
+  <h1>Agentic <span>SDLC Team</span> Setup<br>— Complete Beginner Guide</h1>
+  <p>From a single Jira Epic → Stories → Architecture → Code → Tests → Deployment on GKE. 
+  Includes a full example app with UI, User Management &amp; Order Management microservices.</p>
+</div>
+
+<nav class="toc">
+  <a href="#overview" class="toc-item active">Overview</a>
+  <a href="#tools" class="toc-item">Tools Setup</a>
+  <a href="#agents" class="toc-item">Agent Team</a>
+  <a href="#phase1" class="toc-item">1 · Epic→Stories</a>
+  <a href="#phase2" class="toc-item">2 · Architecture</a>
+  <a href="#phase3" class="toc-item">3 · Planning</a>
+  <a href="#phase4" class="toc-item">4 · Implementation</a>
+  <a href="#phase5" class="toc-item">5 · Testing</a>
+  <a href="#phase6" class="toc-item">6 · Deployment</a>
+  <a href="#example" class="toc-item">Example App</a>
+  <a href="#prompts" class="toc-item">Prompt Templates</a>
+</nav>
+
+<div class="main">
+
+<!-- ═══════════════════ OVERVIEW ═══════════════════ -->
+<section class="phase" id="overview">
+  <div class="phase-header">
+    <div class="phase-num" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);color:var(--accent)">00</div>
+    <div>
+      <div class="phase-title">System Overview</div>
+      <div class="phase-sub">What you're building and how everything connects</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="flow-node">📋 Jira Epic</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">📝 Story Agent</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">🏛 Architect Agent</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">📅 Planner Agent</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">💻 Dev Agent (Claude Code)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">🧪 Test Agent</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">🚀 DevOps Agent → GKE</div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent)"></span>Claude Tools You'll Use</div>
+      <ul class="bullets">
+        <li><strong>Claude.ai Projects</strong> — persistent memory per agent role</li>
+        <li><strong>Claude Code</strong> — actual code generation &amp; file writing in your terminal</li>
+        <li><strong>Claude Cowork</strong> — multi-agent collaborative sessions</li>
+        <li><strong>MCP Connectors</strong> — Jira, GitHub, Google Cloud</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:#a78bfa)"></span>External Services Needed</div>
+      <ul class="bullets">
+        <li><strong>Jira</strong> — Epic &amp; Story source of truth</li>
+        <li><strong>GitHub</strong> — code repository &amp; CI/CD</li>
+        <li><strong>Google Cloud (GKE)</strong> — Kubernetes deployment target</li>
+        <li><strong>Docker Hub / Artifact Registry</strong> — container images</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    <span class="alert-icon">💡</span>
+    <div><strong>Beginner Tip:</strong> Start with Steps 1–3 using only Claude.ai (free or Pro). You only need Claude Code installed locally for Steps 4–6. The entire guide is designed so you can pause and pick up at any phase.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ TOOLS SETUP ═══════════════════ -->
+<section class="phase c-blue" id="tools">
+  <div class="phase-header">
+    <div class="phase-num">01</div>
+    <div>
+      <div class="phase-title">Tools &amp; Account Setup</div>
+      <div class="phase-sub">Everything to install before you start</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Step-by-Step: Claude Products</div>
+    <ol class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Create Claude.ai Account (Pro recommended)</strong>
+          <p>Go to <code>claude.ai</code> → Sign up → Upgrade to Pro ($20/mo). Pro gives you Projects (persistent memory per agent), extended context, and priority access. This is your main UI for designing agents.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Install Claude Code (CLI)</strong>
+          <p>Requires Node.js 18+. Run in your terminal:</p>
+          <pre>npm install -g @anthropic-ai/claude-code
+claude  <span class="comment"># launches the interactive session</span></pre>
+          <p>Claude Code is your coding agent — it reads &amp; writes files, runs commands, and manages your project on disk.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Enable MCP Connectors in Claude.ai</strong>
+          <p>Go to <code>claude.ai → Settings → Integrations</code>. Connect: <strong>Jira</strong> (Atlassian MCP), <strong>GitHub</strong> (GitHub MCP). These let Claude read your Epics and push code.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Set Up Google Cloud CLI</strong>
+          <pre>brew install google-cloud-sdk   <span class="comment"># macOS</span>
+gcloud init
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID</pre>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <strong>Install Docker Desktop</strong>
+          <p>Download from <code>docker.com/products/docker-desktop</code>. Used to build and test container images locally before pushing to GKE.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Create a Claude Project Per Agent Role</div>
+    <p style="color:var(--text-mid);font-size:13px;margin-bottom:12px;">In Claude.ai → <strong>Projects</strong> → Create New Project. Make one project for each agent. The project's system prompt defines the agent's persona and memory.</p>
+    <table>
+      <tr><th>Project Name</th><th>Role</th><th>System Prompt Summary</th></tr>
+      <tr><td><code>📝 Story Agent</code></td><td>Product Owner / BA</td><td>Breaks epics into stories with acceptance criteria &amp; story points</td></tr>
+      <tr><td><code>🏛 Architect Agent</code></td><td>Solution Architect</td><td>Designs microservice boundaries, APIs, data models</td></tr>
+      <tr><td><code>📅 Planner Agent</code></td><td>Sprint Planner / Scrum Master</td><td>Creates sprint plans, task breakdowns, dependency maps</td></tr>
+      <tr><td><code>💻 Dev Agent</code></td><td>Senior Java Developer</td><td>Implements features using Spring Boot; used via Claude Code CLI</td></tr>
+      <tr><td><code>🧪 Test Agent</code></td><td>QA Engineer</td><td>Writes JUnit tests, integration tests, automation suites</td></tr>
+      <tr><td><code>🚀 DevOps Agent</code></td><td>DevOps / Platform Engineer</td><td>Creates Dockerfiles, Helm charts, GKE deployment YAMLs</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════ AGENT TEAM ═══════════════════ -->
+<section class="phase c-purple" id="agents">
+  <div class="phase-header">
+    <div class="phase-num">02</div>
+    <div>
+      <div class="phase-title">Agent System Prompts</div>
+      <div class="phase-sub">Paste these into each Claude Project's "Custom Instructions"</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>📝 Story Agent — System Prompt</div>
+    <pre><span class="string">You are a senior Product Owner and Business Analyst with 10+ years experience.
+Your job: receive a Jira Epic and decompose it into well-structured user stories.
+
+For EACH story you MUST output:
+1. Story Title (verb-noun format: "Create User Login Screen")
+2. User Story (As a [role], I want [action], So that [benefit])
+3. Acceptance Criteria (Given/When/Then, minimum 3 criteria)
+4. Story Point Estimation using Fibonacci (1,2,3,5,8,13)
+   - Justify points based on: complexity, uncertainty, effort
+5. Dependencies (which other stories must complete first)
+6. Suggested Microservice owner
+
+Story Point Reference:
+1pt = trivial UI change | 2pt = simple CRUD | 3pt = standard feature
+5pt = complex logic/integration | 8pt = multi-service feature | 13pt = epic-level
+
+Always ask clarifying questions if the epic is ambiguous.
+Output in structured markdown that can be pasted into Jira.</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>🏛 Architect Agent — System Prompt</div>
+    <pre><span class="string">You are a Principal Solution Architect specializing in cloud-native microservices.
+Tech stack: Java 17, Spring Boot 3.x, Spring Security, JPA/Hibernate, PostgreSQL,
+React 18 (TypeScript), Docker, Kubernetes (GKE), REST APIs.
+
+For each architecture task output:
+1. Service Boundary Analysis (what belongs where)
+2. API Contract (OpenAPI 3.0 spec excerpt)
+3. Data Model (entity diagrams in text/mermaid)
+4. Inter-service Communication pattern (REST/event-driven)
+5. Security design (JWT, RBAC)
+6. Non-functional considerations (scaling, resilience)
+
+Always follow 12-factor app principles.
+Always consider single responsibility per service.
+Flag any risks or anti-patterns you see in the requirements.</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>💻 Dev Agent — Claude Code CLAUDE.md</div>
+    <p style="color:var(--text-mid);font-size:13px;margin-bottom:10px;">Create a <code>CLAUDE.md</code> file in your project root. Claude Code reads this automatically.</p>
+    <pre><span class="comment"># CLAUDE.md — Dev Agent Instructions</span>
+
+<span class="string">## Stack
+- Java 17, Spring Boot 3.2, Maven
+- Spring Data JPA, PostgreSQL
+- Spring Security 6 with JWT
+- React 18, TypeScript, Axios
+- JUnit 5, Mockito, TestContainers
+
+## Coding Standards
+- Follow SOLID principles
+- Every public method needs Javadoc
+- Service layer must be unit-tested (>80% coverage)
+- Use constructor injection (no @Autowired on fields)
+- All REST endpoints must return ResponseEntity<>
+- Use DTOs — never expose JPA entities directly
+- Validate inputs with Bean Validation (@Valid)
+
+## File Structure
+/services/user-service     → User Management Service
+/services/order-service    → Order Management Service
+/frontend/ui-app           → React frontend
+
+## Before any commit
+- mvn test must pass
+- No TODO comments left in code
+- Run: mvn spotless:check</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 1: EPIC → STORIES ═══════════════════ -->
+<section class="phase c-blue" id="phase1">
+  <div class="phase-header">
+    <div class="phase-num">03</div>
+    <div>
+      <div class="phase-title">Phase 1 — Epic to User Stories</div>
+      <div class="phase-sub">Story Agent · Claude.ai Projects · ~30 min</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Input: Your Jira Epic</div>
+    <p style="color:var(--text-mid);font-size:13px;margin-bottom:10px;">Example Epic for our sample application:</p>
+    <pre><span class="string">EPIC: E-Commerce Platform — Core Foundation
+As a business, we need a web application where:
+- Admins can manage users (create, edit, deactivate, assign roles)
+- Customers can register, login, and manage their profile  
+- Customers can browse, create, and manage orders
+- The system must support multiple user roles: ADMIN, MANAGER, CUSTOMER
+- All services communicate via REST APIs
+- Deployed on Google Cloud Kubernetes Engine</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>How to Use the Story Agent</div>
+    <ol class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Open your "📝 Story Agent" Claude Project</strong>
+          <p>The system prompt is already loaded. Paste your Epic text into the chat.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Say: "Break this epic into user stories grouped by microservice"</strong>
+          <p>Claude will output structured stories with story points for each service.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Review and iterate</strong>
+          <p>Ask: "Add acceptance criteria for the RBAC story" or "Split story 3 — it's too large"</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Export to Jira</strong>
+          <p>Ask: "Format all stories as Jira-compatible markdown with labels and components"</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Expected Story Output (Example)</div>
+    <pre><span class="comment">## STORY: US-001 — User Login</span>
+<span class="string">As a registered user, I want to log in with email/password
+so that I can access the platform securely.
+
+Acceptance Criteria:
+- Given valid credentials → JWT token returned, redirect to dashboard
+- Given invalid credentials → 401 error with message "Invalid credentials"  
+- Given account locked → 403 with message "Account locked"
+- Token expires after 24 hours
+- Remember-me option extends to 7 days
+
+Story Points: 3
+Dependencies: US-002 (Register User)
+Service: user-service, ui-app</span>
+
+<span class="comment">## STORY: US-007 — Admin User Management Dashboard</span>
+<span class="string">Story Points: 8  (complex UI + role-based API + pagination)
+Dependencies: US-001, US-002, US-003</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 2: ARCHITECTURE ═══════════════════ -->
+<section class="phase c-purple" id="phase2">
+  <div class="phase-header">
+    <div class="phase-num">04</div>
+    <div>
+      <div class="phase-title">Phase 2 — Architecture Design</div>
+      <div class="phase-sub">Architect Agent · Claude.ai Projects · ~45 min</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Architecture Overview</div>
+    <pre><span class="comment">┌─────────────────────────────────────────────────────┐
+│                   REACT UI APP (Port 3000)           │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │  Login   │  │ User Mgmt    │  │ Order Mgmt   │   │
+│  │  Page    │  │ Dashboard    │  │ Dashboard    │   │
+│  └────┬─────┘  └──────┬───────┘  └──────┬───────┘   │
+└───────┼────────────────┼────────────────┼────────────┘
+        │                │                │
+        ▼                ▼                ▼
+┌────────────────────────────────────────────────────┐
+│              API GATEWAY (Spring Cloud GW)          │
+│    Routes: /auth/**, /users/**, /orders/**          │
+└───────┬─────────────────────────┬──────────────────┘
+        │                         │
+        ▼                         ▼
+┌───────────────────┐   ┌──────────────────────┐
+│  USER-SERVICE     │   │  ORDER-SERVICE        │
+│  Port: 8081       │   │  Port: 8082           │
+│  ────────────     │   │  ─────────────────    │
+│  /auth/login      │   │  /orders (CRUD)       │
+│  /auth/register   │   │  /orders/{id}/status  │
+│  /users (CRUD)    │   │  /orders/user/{id}    │
+│  /users/roles     │   │                       │
+│  ────────────     │   │  ─────────────────    │
+│  DB: PostgreSQL   │   │  DB: PostgreSQL       │
+│  users_db         │   │  orders_db            │
+└───────────────────┘   └──────────────────────┘</span></pre>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>User Service — Data Model</div>
+      <pre><span class="keyword">@Entity</span>
+<span class="tag">User</span> {
+  id: UUID
+  email: String (unique)
+  passwordHash: String
+  firstName: String
+  lastName: String
+  role: Enum(ADMIN,MANAGER,CUSTOMER)
+  status: Enum(ACTIVE,INACTIVE,LOCKED)
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+<span class="tag">RefreshToken</span> {
+  id: UUID
+  user: User (FK)
+  token: String
+  expiresAt: Timestamp
+}</pre>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Order Service — Data Model</div>
+      <pre><span class="keyword">@Entity</span>
+<span class="tag">Order</span> {
+  id: UUID
+  userId: UUID <span class="comment">(ref, no FK)</span>
+  status: Enum(PENDING,CONFIRMED,
+         SHIPPED,DELIVERED,CANCELLED)
+  totalAmount: BigDecimal
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+<span class="tag">OrderItem</span> {
+  id: UUID
+  order: Order (FK)
+  productName: String
+  quantity: Integer
+  unitPrice: BigDecimal
+}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>How to Use the Architect Agent</div>
+    <ol class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Open "🏛 Architect Agent" Project, paste all your stories</strong>
+          <p>Say: "Design the microservice architecture for these user stories"</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Request OpenAPI specs</strong>
+          <p>Say: "Generate OpenAPI 3.0 YAML for the user-service REST endpoints"</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Get JWT/Security design</strong>
+          <p>Say: "Design the JWT authentication flow and RBAC permission matrix"</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Save the output as ARCHITECTURE.md in your repo</strong>
+          <p>This becomes the reference for your Dev Agent and all team members.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 3: PLANNING ═══════════════════ -->
+<section class="phase c-green" id="phase3">
+  <div class="phase-header">
+    <div class="phase-num">05</div>
+    <div>
+      <div class="phase-title">Phase 3 — Sprint Planning</div>
+      <div class="phase-sub">Planner Agent · Claude.ai Projects · ~20 min</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Sprint Plan Prompt</div>
+    <pre><span class="string">Given these user stories with story points and dependencies,
+create a 3-sprint implementation plan:
+- Sprint 1: Foundation (auth, user CRUD, project setup)
+- Sprint 2: Core Features (order management, UI integration)  
+- Sprint 3: Polish (admin dashboard, testing, deployment)
+
+For each sprint show:
+1. Stories included (with SP total, max 30 SP per sprint)
+2. Dev tasks broken into max 4-hour chunks
+3. Parallel work tracks (backend vs frontend)
+4. Definition of Done for each story
+5. Risk flags</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Sample Sprint 1 Plan Output</div>
+    <table>
+      <tr><th>Story</th><th>Track</th><th>Tasks</th><th>SP</th></tr>
+      <tr><td>Project Setup</td><td>Both</td><td>Init Maven multi-module, React app, Docker Compose for local dev</td><td>2</td></tr>
+      <tr><td>User Register</td><td>Backend</td><td>Entity, Repo, Service, Controller, BCrypt, Validation</td><td>3</td></tr>
+      <tr><td>User Login/JWT</td><td>Backend</td><td>JWT util, AuthService, SecurityConfig, token refresh</td><td>5</td></tr>
+      <tr><td>Login UI</td><td>Frontend</td><td>Login form, axios auth service, token storage, redirect</td><td>3</td></tr>
+      <tr><td>User CRUD API</td><td>Backend</td><td>CRUD endpoints, DTOs, RBAC guards, pagination</td><td>5</td></tr>
+      <tr><td colspan="3" style="text-align:right;color:var(--text-dim)"><strong>Sprint 1 Total</strong></td><td><strong>18 SP</strong></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 4: IMPLEMENTATION ═══════════════════ -->
+<section class="phase c-amber" id="phase4">
+  <div class="phase-header">
+    <div class="phase-num">06</div>
+    <div>
+      <div class="phase-title">Phase 4 — Implementation with Claude Code</div>
+      <div class="phase-sub">Dev Agent · Claude Code CLI · The main coding phase</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Initial Project Bootstrap</div>
+    <p style="color:var(--text-mid);font-size:13px;margin-bottom:10px;">Run these commands, then let Claude Code handle the rest:</p>
+    <pre><span class="comment"># 1. Create project structure</span>
+mkdir ecommerce-platform && cd ecommerce-platform
+git init
+
+<span class="comment"># 2. Start Claude Code</span>
+claude
+
+<span class="comment"># 3. First prompt to Claude Code:</span></pre>
+    <pre><span class="string">Create a Maven multi-module project with:
+- Parent POM (Java 17, Spring Boot 3.2)
+- Module: user-service (Spring Web, Security, JPA, PostgreSQL, Validation)
+- Module: order-service (Spring Web, JPA, PostgreSQL, Validation)
+- Also create a React TypeScript app in /frontend with Axios, React Router v6
+- Create docker-compose.yml with PostgreSQL instances for both services
+- Create CLAUDE.md with the coding standards I'll provide</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Key Claude Code Prompts Per Service</div>
+    <div class="grid2">
+      <div>
+        <p style="color:var(--accent);font-size:12px;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;">USER SERVICE</p>
+        <pre style="font-size:11px;"><span class="string">"In user-service, implement:
+1. User entity with fields from ARCHITECTURE.md
+2. UserRepository (JPA)
+3. UserService with register/login/CRUD
+4. AuthController POST /auth/register, /auth/login
+5. UserController GET/PUT/DELETE /users/**
+6. JWT filter chain in SecurityConfig
+7. Role-based access (ADMIN only for DELETE)
+8. DTOs: RegisterRequest, LoginResponse, UserDTO
+Use constructor injection throughout."</span></pre>
+      </div>
+      <div>
+        <p style="color:var(--accent);font-size:12px;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;">ORDER SERVICE</p>
+        <pre style="font-size:11px;"><span class="string">"In order-service, implement:
+1. Order + OrderItem entities
+2. OrderRepository, OrderItemRepository
+3. OrderService with create/update/cancel
+4. OrderController with endpoints:
+   POST /orders
+   GET /orders/{id}
+   GET /orders/user/{userId}
+   PUT /orders/{id}/status
+   DELETE /orders/{id}
+5. JWT validation filter (verify token from user-service)
+6. Status state machine (PENDING→CONFIRMED→SHIPPED)"</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>React Frontend Key Prompts</div>
+    <pre><span class="string">"In /frontend, create these React components:
+1. AuthContext — stores JWT, expiry, user role
+2. PrivateRoute — redirects to login if no token
+3. LoginPage — form with email/password, calls POST /auth/login
+4. Dashboard — role-based nav (ADMIN sees User Management, all see Orders)
+5. UserManagementPage (ADMIN only):
+   - Table of all users with search/filter
+   - Modal to edit user details and role
+   - Toggle active/inactive status
+6. OrdersPage:
+   - List user's orders with status badges
+   - Create Order modal with items
+   - Order detail view with timeline
+Use Axios with interceptor to attach Bearer token automatically."</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Claude Code Workflow Tips</div>
+    <ul class="bullets">
+      <li><strong>Review before accepting</strong> — Claude Code shows diffs; press <code>y</code> to accept each file</li>
+      <li><strong>Incremental builds</strong> — after each feature, run <code>mvn test</code> before moving on</li>
+      <li><strong>Fix errors in-context</strong> — paste the error back into Claude Code: "Fix this compilation error: [paste]"</li>
+      <li><strong>Use /compact flag</strong> — if context gets long, type <code>/compact</code> to summarize and continue</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 5: TESTING ═══════════════════ -->
+<section class="phase c-red" id="phase5">
+  <div class="phase-header">
+    <div class="phase-num">07</div>
+    <div>
+      <div class="phase-title">Phase 5 — Testing</div>
+      <div class="phase-sub">Test Agent · JUnit 5 + Mockito + Selenium/Playwright</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Unit Tests (JUnit 5 + Mockito)</div>
+      <pre style="font-size:11px;"><span class="string">"Write JUnit 5 tests for UserService:
+- testRegisterUser_success
+- testRegisterUser_emailAlreadyExists
+- testLogin_validCredentials_returnsToken
+- testLogin_invalidPassword_throws401
+- testGetUser_adminRole_success
+- testGetUser_customerRole_accessDenied
+- testDeactivateUser_locksAccount
+
+Use @ExtendWith(MockitoExtension.class)
+Mock: UserRepository, PasswordEncoder, JwtUtil
+Assert: verify() calls + assertThrows()"</span></pre>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Integration Tests (TestContainers)</div>
+      <pre style="font-size:11px;"><span class="string">"Write @SpringBootTest integration tests
+using TestContainers PostgreSQL:
+- Full auth flow: register → login → get token
+- Admin creates user, customer login, view orders
+- Order lifecycle: create → confirm → ship → deliver
+- Unauthorized access returns 403
+- JWT expired returns 401
+
+Use MockMvc for HTTP assertions
+Use @Sql to seed test data"</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>End-to-End Automation Tests</div>
+    <pre><span class="string">"Create Playwright (TypeScript) E2E tests in /e2e:
+test('full user journey', async ({ page }) => {
+  // Admin login
+  await page.goto('/login')
+  await page.fill('[name=email]', 'admin@test.com')
+  await page.fill('[name=password]', 'Admin123!')
+  await page.click('button[type=submit]')
+  await expect(page).toHaveURL('/dashboard')
+
+  // Create a new customer user
+  await page.click('nav >> text=User Management')  
+  await page.click('button >> text=Add User')
+  // ... fill form, save, assert row appears in table
+
+  // Switch to customer, create order
+  // ... login as customer, go to Orders, create order
+  // Assert order appears in list with PENDING status
+})</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Test Coverage Command</div>
+    <pre><span class="comment"># Run all tests with coverage report</span>
+mvn verify -Pcoverage
+
+<span class="comment"># View coverage (opens in browser)</span>
+open user-service/target/site/jacoco/index.html
+
+<span class="comment"># Run E2E tests (requires app running)</span>
+docker-compose up -d
+cd e2e && npx playwright test --reporter=html</pre>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 6: DEPLOYMENT ═══════════════════ -->
+<section class="phase c-teal" id="phase6">
+  <div class="phase-header">
+    <div class="phase-num">08</div>
+    <div>
+      <div class="phase-title">Phase 6 — Docker &amp; GKE Deployment</div>
+      <div class="phase-sub">DevOps Agent · Docker + Kubernetes + Google Cloud</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Dockerfile — user-service</div>
+      <pre style="font-size:11px;"><span class="comment"># Multi-stage build</span>
+<span class="keyword">FROM</span> maven:3.9-eclipse-temurin-17 <span class="keyword">AS</span> build
+<span class="keyword">WORKDIR</span> /app
+<span class="keyword">COPY</span> pom.xml .
+<span class="keyword">RUN</span> mvn dependency:go-offline
+<span class="keyword">COPY</span> src ./src
+<span class="keyword">RUN</span> mvn package -DskipTests
+
+<span class="keyword">FROM</span> eclipse-temurin:17-jre-alpine
+<span class="keyword">RUN</span> addgroup -S app && adduser -S app -G app
+<span class="keyword">WORKDIR</span> /app
+<span class="keyword">COPY</span> --from=build /app/target/*.jar app.jar
+<span class="keyword">USER</span> app
+<span class="keyword">EXPOSE</span> 8081
+<span class="keyword">ENTRYPOINT</span> ["java","-jar","app.jar"]</pre>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Kubernetes Deployment — user-service</div>
+      <pre style="font-size:11px;"><span class="keyword">apiVersion</span>: apps/v1
+<span class="keyword">kind</span>: Deployment
+<span class="keyword">metadata</span>:
+  name: user-service
+  namespace: ecommerce
+<span class="keyword">spec</span>:
+  replicas: 2
+  selector:
+    matchLabels: {app: user-service}
+  template:
+    metadata:
+      labels: {app: user-service}
+    spec:
+      containers:
+      - name: user-service
+        image: gcr.io/PROJECT_ID/user-service:latest
+        ports: [{containerPort: 8081}]
+        env:
+        - name: DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: user-db-url
+        resources:
+          requests: {memory: 256Mi, cpu: 250m}
+          limits: {memory: 512Mi, cpu: 500m}</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>GKE Deployment — Step by Step</div>
+    <ol class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Create GKE Cluster</strong>
+          <pre>gcloud container clusters create ecommerce-cluster \
+  --zone us-central1-a \
+  --num-nodes 3 \
+  --machine-type e2-standard-2
+gcloud container clusters get-credentials ecommerce-cluster --zone us-central1-a</pre>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Build &amp; Push Images to Google Artifact Registry</strong>
+          <pre>gcloud auth configure-docker us-central1-docker.pkg.dev
+docker build -t us-central1-docker.pkg.dev/PROJECT_ID/ecommerce/user-service:v1 \
+  ./user-service
+docker push us-central1-docker.pkg.dev/PROJECT_ID/ecommerce/user-service:v1</pre>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Create Kubernetes Namespace &amp; Secrets</strong>
+          <pre>kubectl create namespace ecommerce
+kubectl create secret generic db-secret \
+  --from-literal=user-db-url="jdbc:postgresql://..." \
+  --from-literal=order-db-url="jdbc:postgresql://..." \
+  -n ecommerce</pre>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Apply Kubernetes Manifests</strong>
+          <pre>kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/user-service/
+kubectl apply -f k8s/order-service/
+kubectl apply -f k8s/frontend/
+kubectl apply -f k8s/ingress.yaml</pre>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <strong>Verify Deployment</strong>
+          <pre>kubectl get pods -n ecommerce
+kubectl get services -n ecommerce
+kubectl logs -f deployment/user-service -n ecommerce</pre>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>DevOps Agent Prompt for Full K8s Setup</div>
+    <pre><span class="string">"Generate complete Kubernetes manifests for our 3-service app:
+1. Namespace: ecommerce
+2. Deployments: user-service (2 replicas), order-service (2 replicas), frontend (2 replicas)
+3. Services: ClusterIP for backend, LoadBalancer for frontend
+4. ConfigMaps for non-secret app config
+5. Secrets for DB passwords and JWT secret
+6. HorizontalPodAutoscaler (scale 2-5 pods at 70% CPU)
+7. Ingress with /api/users/** → user-service, /api/orders/** → order-service
+8. Cloud SQL proxy sidecar for PostgreSQL
+9. PodDisruptionBudget for zero-downtime deploys
+10. GitHub Actions CI/CD pipeline YAML"</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════ EXAMPLE APP ═══════════════════ -->
+<section class="phase c-pink" id="example">
+  <div class="phase-header">
+    <div class="phase-num">09</div>
+    <div>
+      <div class="phase-title">Example App — Full Walkthrough</div>
+      <div class="phase-sub">ShopFlow — a complete 3-service reference application</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Seed Data — Users to Test With</div>
+    <pre><span class="comment">-- Run in user-service PostgreSQL</span>
+<span class="keyword">INSERT INTO</span> users (id, email, password_hash, first_name, last_name, role, status)
+<span class="keyword">VALUES</span>
+  (gen_random_uuid(), <span class="string">'admin@shopflow.com'</span>,    <span class="string">'$2a$12$...'</span>, <span class="string">'Alice'</span>,   <span class="string">'Admin'</span>,   <span class="string">'ADMIN'</span>,    <span class="string">'ACTIVE'</span>),
+  (gen_random_uuid(), <span class="string">'manager@shopflow.com'</span>,  <span class="string">'$2a$12$...'</span>, <span class="string">'Bob'</span>,     <span class="string">'Manager'</span>, <span class="string">'MANAGER'</span>,  <span class="string">'ACTIVE'</span>),
+  (gen_random_uuid(), <span class="string">'customer@shopflow.com'</span>, <span class="string">'$2a$12$...'</span>, <span class="string">'Charlie'</span>, <span class="string">'User'</span>,    <span class="string">'CUSTOMER'</span>, <span class="string">'ACTIVE'</span>);
+<span class="comment">-- Password for all: Test@1234</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Feature Matrix by Role</div>
+    <table>
+      <tr><th>Feature</th><th>ADMIN</th><th>MANAGER</th><th>CUSTOMER</th></tr>
+      <tr><td>Login / Logout</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>View own profile</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>View all users</td><td>✅</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Create / Edit users</td><td>✅</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Deactivate users</td><td>✅</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Assign roles</td><td>✅</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Create orders</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>View own orders</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>View all orders</td><td>✅</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Update order status</td><td>✅</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Cancel own order</td><td>✅</td><td>✅</td><td>✅ (PENDING only)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Quick Start — Run Locally in 5 Minutes</div>
+    <pre><span class="comment"># 1. Clone and start databases</span>
+git clone https://github.com/YOU/ecommerce-platform
+cd ecommerce-platform
+docker-compose up -d  <span class="comment"># starts postgres-users:5432, postgres-orders:5433</span>
+
+<span class="comment"># 2. Start user-service</span>
+cd user-service && mvn spring-boot:run &
+
+<span class="comment"># 3. Start order-service</span>
+cd ../order-service && mvn spring-boot:run &
+
+<span class="comment"># 4. Start React frontend</span>
+cd ../frontend && npm install && npm start
+
+<span class="comment"># 5. Open browser</span>
+open http://localhost:3000
+<span class="comment"># Login: admin@shopflow.com / Test@1234</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════ PROMPT TEMPLATES ═══════════════════ -->
+<section class="phase c-green" id="prompts">
+  <div class="phase-header">
+    <div class="phase-num">10</div>
+    <div>
+      <div class="phase-title">Prompt Templates — Copy &amp; Use</div>
+      <div class="phase-sub">Reusable prompts for each agent in your workflow</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>🔁 Complete SDLC Kickoff Prompt</div>
+    <p style="color:var(--text-mid);font-size:13px;margin-bottom:10px;">Use this in any Claude Project to kick off the full pipeline from a new Epic:</p>
+    <pre><span class="string">I have a new Jira Epic. Please run the full SDLC pipeline:
+
+EPIC: [Paste your Epic here]
+
+Step 1 — Story Breakdown: Create user stories with acceptance criteria and 
+story points for each microservice (user-service, order-service, frontend).
+
+Step 2 — Architecture: Identify any new API endpoints or data model changes needed.
+
+Step 3 — Sprint Planning: Which sprint does this fit in? What are the dependencies?
+
+Step 4 — Implementation Tasks: Give me the exact Claude Code prompts I should 
+use to implement each story, in order.
+
+Step 5 — Test Coverage: What test cases are needed for these stories?
+
+Output each step clearly labeled. Ask me if you need clarification.</span></pre>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>🐛 Bug Fix Prompt (Claude Code)</div>
+      <pre style="font-size:11px;"><span class="string">"There is a bug in user-service:
+[Paste stack trace / error]
+
+1. Identify the root cause
+2. Show me the exact file and line
+3. Explain why it's happening
+4. Fix it with minimal code change
+5. Add a regression test so it won't happen again"</span></pre>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>🔄 Code Review Prompt</div>
+      <pre style="font-size:11px;"><span class="string">"Review this code for:
+1. Security issues (SQL injection, auth bypass)
+2. Performance problems (N+1 queries, missing indexes)
+3. SOLID principle violations
+4. Missing error handling
+5. Test coverage gaps
+
+Code: [paste file or diff]
+
+Output: prioritized issues with fix examples"</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>📊 Status Check Prompt (Weekly)</div>
+    <pre><span class="string">Based on our current sprint:
+- Stories: [list stories with DONE/IN-PROGRESS/TODO]
+- Blockers: [describe any]
+- Test coverage: [mvn verify output summary]
+
+Please:
+1. Identify what's at risk for sprint completion
+2. Suggest reprioritization if needed
+3. Give me the next 3 Claude Code prompts I should run today
+4. Flag any architectural concerns from this sprint's implementation</span></pre>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<hr>
+<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;">
+  <div style="color:var(--text-dim);font-size:12px;font-family:'IBM Plex Mono',monospace;">
+    Agentic SDLC Blueprint · Claude.ai + Claude Code + GKE
+  </div>
+  <div class="tag-row">
+    <span class="tag-pill tag-blue">Claude Pro</span>
+    <span class="tag-pill tag-purple">Claude Code</span>
+    <span class="tag-pill tag-green">Spring Boot</span>
+    <span class="tag-pill tag-amber">React</span>
+    <span class="tag-pill tag-red">GKE</span>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

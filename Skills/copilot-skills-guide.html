@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-Skill System: Code Archaeology · Story Generator · Repo QA</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f7fb; --white:#ffffff; --s2:#eef1f8; --s3:#e4e9f4;
+    --bd:#cdd5e8; --bd2:#b4c0d8;
+    --c1:#1f6feb;   /* blue - Copilot */
+    --c2:#7c3aed;   /* violet - Claude */
+    --c3:#0e9e5c;   /* green */
+    --c4:#d4600a;   /* orange */
+    --c5:#c0392b;   /* red */
+    --c6:#a07800;   /* amber */
+    --c7:#0891b2;   /* teal */
+    --skill1:#0e6b3a; /* archaeology - forest green */
+    --skill2:#1f5fa6; /* stories - ocean blue */
+    --skill3:#7c3aed; /* qa - violet */
+    --tx:#1a2640; --tm:#3f5270; --td:#6b82a0;
+    --sh:0 1px 4px rgba(0,40,100,.08),0 4px 16px rgba(0,40,100,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-size:14px;line-height:1.75}
+
+  /* ── HERO ── */
+  .hero{padding:52px 44px 44px;background:linear-gradient(150deg,#06111f 0%,#0d1f38 55%,#06111f 100%);position:relative;overflow:hidden;border-bottom:2px solid var(--c1)}
+  .hero::before{content:'';position:absolute;top:-120px;right:-80px;width:560px;height:560px;background:radial-gradient(circle,rgba(31,111,235,.07) 0%,transparent 65%);pointer-events:none}
+  .hero::after{content:'';position:absolute;bottom:-80px;left:20%;width:400px;height:400px;background:radial-gradient(circle,rgba(124,58,237,.05) 0%,transparent 65%);pointer-events:none}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:#79c0ff;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .eyebrow::before{content:'';width:28px;height:1px;background:#79c0ff}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,3.8vw,38px);font-weight:800;line-height:1.12;margin-bottom:14px;color:#fff}
+  .hero h1 .a{color:#4ade80} .hero h1 .b{color:#79c0ff} .hero h1 .c{color:#c4b5fd}
+  .hero p{color:#8b949e;font-size:15px;max-width:720px;margin-bottom:22px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.72);background:rgba(255,255,255,.06)}
+
+  /* ── NAV ── */
+  .nav{background:#fff;border-bottom:2px solid var(--bd);padding:0 44px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,40,100,.07)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{padding:13px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-2px}
+  .nav a:hover{color:var(--c1);border-bottom-color:var(--c1)}
+
+  /* ── LAYOUT ── */
+  .wrap{max-width:1120px;margin:0 auto;padding:44px 44px 100px}
+
+  /* ── SECTION HEADERS ── */
+  .sec{margin-bottom:56px;scroll-margin-top:60px}
+  .sh{display:flex;align-items:flex-start;gap:16px;margin-bottom:26px}
+  .si{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:var(--sh)}
+  .st-h{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--tx)}
+  .ss{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);margin-top:4px}
+
+  /* ── SKILL HEADER BANDS ── */
+  .skill-band{border-radius:14px;padding:22px 26px;margin-bottom:16px;border:1px solid}
+  .sk1{background:linear-gradient(135deg,#e6f4ec,#d0ebdd);border-color:#86c9a0}
+  .sk2{background:linear-gradient(135deg,#dbeafe,#c2d8f5);border-color:#7eb4e8}
+  .sk3{background:linear-gradient(135deg,#ede9fe,#ddd0f8);border-color:#b89de8}
+  .skill-band h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:6px}
+  .skill-band p{font-size:13px;color:var(--tm)}
+  .skill-file{font-family:'JetBrains Mono',monospace;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:8px}
+
+  /* ── CARDS ── */
+  .card{background:var(--white);border:1px solid var(--bd);border-radius:14px;padding:22px;margin-bottom:14px;box-shadow:var(--sh)}
+  .ch{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:9px}
+
+  /* ── CODE / FILE BLOCKS ── */
+  pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;margin:10px 0;color:#c9d1d9;white-space:pre-wrap}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(31,111,235,.09);border:1px solid rgba(31,111,235,.18);border-radius:4px;padding:1px 6px;color:var(--c1)}
+  .file-label{font-family:'JetBrains Mono',monospace;font-size:10px;background:#30363d;color:#79c0ff;padding:3px 10px;border-radius:6px 6px 0 0;display:inline-block;margin-bottom:-1px}
+
+  /* ── STEPS ── */
+  .steps{list-style:none}
+  .step{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--s3)}
+  .step:last-child{border-bottom:none}
+  .sn{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0;margin-top:2px}
+  .sc strong{display:block;color:var(--tx);margin-bottom:3px;font-size:13px;font-weight:600}
+  .sc p{color:var(--tm);font-size:12.5px}
+  .sc code{font-size:11.5px}
+
+  /* ── GRIDS ── */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+
+  /* ── TABLE ── */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 14px;background:var(--s2);color:var(--td);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:left;border-bottom:2px solid var(--bd)}
+  td{padding:10px 14px;border-bottom:1px solid var(--s3);vertical-align:top;color:var(--tm)}
+  td strong{color:var(--tx)} td code{font-size:11px}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--s2)}
+
+  /* ── ALERTS ── */
+  .alert{border-radius:10px;padding:13px 17px;margin:14px 0;font-size:13px;display:flex;gap:11px;align-items:flex-start}
+  .al-blue{background:#dbeafe;border:1px solid #93c5fd;color:#1e3a8a}
+  .al-green{background:#dcfce7;border:1px solid #86efac;color:#14532d}
+  .al-amber{background:#fff7e6;border:1px solid #f5c97a;color:#7a4a00}
+  .al-red{background:#fee2e2;border:1px solid #fca5a5;color:#7f1d1d}
+  .al-purple{background:#ede9fe;border:1px solid #c4b5fd;color:#3b0764}
+  .al-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+  .alert strong{font-weight:600}
+
+  /* ── FLOW ── */
+  .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:16px 18px;background:var(--s2);border-radius:10px;border:1px solid var(--bd);margin:10px 0}
+  .fn2{background:var(--white);border:1px solid var(--bd);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--tx);font-family:'JetBrains Mono',monospace;box-shadow:var(--sh)}
+  .fa{color:var(--td);font-size:14px;font-weight:700}
+
+  /* ── DOCUMENT CARD ── */
+  .doc-card{background:var(--white);border:1px solid var(--bd);border-radius:12px;padding:18px 20px;margin-bottom:10px}
+  .doc-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--c1);margin-bottom:6px}
+  .doc-desc{font-size:12.5px;color:var(--tm);margin-bottom:8px}
+  .doc-used{font-size:11px;color:var(--td)}
+
+  /* ── TAGS ── */
+  .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 9px;border-radius:20px;border:1px solid;display:inline-block;margin:2px}
+
+  ul.bl{padding-left:18px}
+  ul.bl li{margin-bottom:7px;color:var(--tm);font-size:13px}
+  ul.bl li strong{color:var(--tx);font-weight:600}
+  hr{border:none;border-top:1px solid var(--bd);margin:36px 0}
+
+  /* Phase helpers */
+  .p-arch .si{background:linear-gradient(135deg,#e6f4ec,#c8f0da);border:1px solid #7dca9e}
+  .p-story .si{background:linear-gradient(135deg,#dbeafe,#c2d8f5);border:1px solid #7eb4e8}
+  .p-qa .si{background:linear-gradient(135deg,#ede9fe,#ddd0f8);border:1px solid #b89de8}
+  .p-setup .si{background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097}
+  .p-test .si{background:linear-gradient(135deg,#e6f7f9,#c0ecf2);border:1px solid #7dd4e0}
+
+  .final-box{background:linear-gradient(135deg,#06111f,#0d1f38);border-radius:14px;padding:28px;color:white;margin-top:8px;border:1px solid #1c3050}
+  .final-box pre{background:#040c18;border-color:#1e3050;color:#a8c8e8}
+  .final-box .fb-t{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px;color:#fff}
+
+  /* Skill number badge */
+  .skill-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-right:8px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">3-Skill System · Code Archaeology · Story Generator · Repo QA</div>
+  <h1>
+    <span class="a">Code Archaeology</span> ·
+    <span class="b">Story Generator</span> ·
+    <span class="c">Repo QA</span><br>
+    Complete Setup Guide
+  </h1>
+  <p>Step-by-step: install three AI skills that work together across all your repos — Spring Boot services, React UI apps, shared JARs. Scan once, query forever. Stories from real code. Answers from structured docs, not re-scanning source.</p>
+  <div class="chips">
+    <span class="chip">☸️ GKE + Apigee aware</span>
+    <span class="chip">🤖 Claude + Copilot</span>
+    <span class="chip">📦 Spring Boot · React · Shared JARs</span>
+    <span class="chip">🪙 Token-optimised docs</span>
+    <span class="chip">📝 Jira-ready stories</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#overview">Overview</a>
+  <a href="#prereqs">Prerequisites</a>
+  <a href="#skill1">Skill 1: Archaeology</a>
+  <a href="#skill2">Skill 2: Stories</a>
+  <a href="#skill3">Skill 3: Repo QA</a>
+  <a href="#docs">Doc Formats</a>
+  <a href="#install">Install Skills</a>
+  <a href="#execute">Execute Per Repo</a>
+  <a href="#testing">Test &amp; Verify</a>
+  <a href="#tokens">Token Guide</a>
+  <a href="#cheatsheet">Cheatsheet</a>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══ OVERVIEW ═══ -->
+<section class="sec" id="overview">
+  <div class="sh">
+    <div class="si p-setup" style="background:linear-gradient(135deg,#e8f4ff,#d0e8ff);border:1px solid #93c5e8">🗺</div>
+    <div>
+      <div class="st-h">How the 3 Skills Work Together</div>
+      <div class="ss">One-time scan per repo → permanent knowledge base → stories + answers on demand</div>
+    </div>
+  </div>
+
+  <div class="flow-row">
+    <div class="fn2">📁 Your Repo<br><span style="font-size:10px;color:#6b82a0">Java/React/JAR</span></div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#86c9a0;color:#0e6b3a">🔍 Skill 1<br><span style="font-size:10px">code-archaeology</span></div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#b0cce8;color:#1f5fa6">📄 6 Markdown Docs<br><span style="font-size:10px">committed to repo</span></div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#7eb4e8;color:#1f5fa6">📝 Skill 2<br><span style="font-size:10px">story-generator</span></div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#f5c097;color:#d4600a">🎫 Jira Stories<br><span style="font-size:10px">Type A + B</span></div>
+  </div>
+  <div class="flow-row" style="margin-top:6px">
+    <div class="fn2" style="opacity:0.3">📁 Your Repo</div>
+    <div class="fa" style="opacity:0.3">→</div>
+    <div class="fn2" style="opacity:0.3;border-color:#86c9a0;color:#0e6b3a">🔍 Skill 1</div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#b0cce8;color:#1f5fa6">📄 6 Markdown Docs</div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#c4b5fd;color:#7c3aed">💬 Skill 3<br><span style="font-size:10px">repo-qa</span></div>
+    <div class="fa">→</div>
+    <div class="fn2" style="border-color:#c4b5fd;color:#7c3aed">✅ Instant Answers<br><span style="font-size:10px">no re-scan needed</span></div>
+  </div>
+
+  <div class="g3" style="margin-top:18px">
+    <div class="skill-band sk1">
+      <div class="sk1"></div>
+      <h3 style="color:var(--skill1)">🔍 Skill 1: Code Archaeology</h3>
+      <p>Scans any repo and writes 6 structured markdown docs. Works on Spring Boot, React, or shared JARs. Run once per service, update when code changes significantly.</p>
+      <div class="tags" style="margin-top:10px">
+        <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">SERVICE_PROFILE.md</span>
+        <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">CLAUDE.md</span>
+        <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">+4 more</span>
+      </div>
+    </div>
+    <div class="skill-band sk2">
+      <h3 style="color:var(--skill2)">📝 Skill 2: Story Generator</h3>
+      <p>Reads the 6 markdown docs and generates Jira-ready stories — both Type A (reverse: existing behaviour) and Type B (gap: what's broken or missing). Includes story points and risk.</p>
+      <div class="tags" style="margin-top:10px">
+        <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">Type A stories</span>
+        <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">Type B gaps</span>
+        <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">Jira format</span>
+      </div>
+    </div>
+    <div class="skill-band sk3">
+      <h3 style="color:var(--skill3)">💬 Skill 3: Repo QA</h3>
+      <p>Answers any developer question about the service using the markdown docs — no re-scanning. Auth model, patterns, risk assessments, how to write tests, is it safe to change X.</p>
+      <div class="tags" style="margin-top:10px">
+        <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">instant answers</span>
+        <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">min token load</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PREREQUISITES ═══ -->
+<section class="sec p-setup" id="prereqs">
+  <div class="sh">
+    <div class="si">⚙️</div>
+    <div>
+      <div class="st-h">Prerequisites — What You Need Before Installing</div>
+      <div class="ss">One-time setup. Most items you likely have already.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">✅ Required Accounts &amp; Tools</div>
+    <table>
+      <tr><th>Tool</th><th>Purpose</th><th>Where to Get</th><th>Check</th></tr>
+      <tr><td><strong>Claude.ai Pro or Team</strong></td><td>Run skills via Claude Projects + Claude Code</td><td>claude.ai</td><td><code>claude --version</code></td></tr>
+      <tr><td><strong>Claude Code CLI</strong></td><td>Run code-archaeology in terminal</td><td><code>npm i -g @anthropic-ai/claude-code</code></td><td><code>claude --version</code></td></tr>
+      <tr><td><strong>GitHub Copilot Business/Enterprise</strong></td><td>Copilot Chat + copilot-instructions.md</td><td>github.com/features/copilot</td><td>Copilot icon in VS Code</td></tr>
+      <tr><td><strong>VS Code</strong></td><td>Copilot integration + Copilot Chat</td><td>code.visualstudio.com</td><td>Extensions: github.copilot, github.copilot-chat</td></tr>
+      <tr><td><strong>Node.js 18+</strong></td><td>Required by Claude Code</td><td>nodejs.org</td><td><code>node --version</code></td></tr>
+      <tr><td><strong>Java 8–17 + Maven</strong></td><td>To run <code>mvn test</code> for TEST_HEALTH.md</td><td>Already have</td><td><code>mvn --version</code></td></tr>
+      <tr><td><strong>kubectl</strong></td><td>For GKE_READINESS context</td><td>Already have</td><td><code>kubectl version</code></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">📦 Skill File Downloads</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:12px;">Three <code>.skill</code> files are provided. Download all three before proceeding.</p>
+    <div class="g3">
+      <div class="doc-card" style="border-color:#86c9a0">
+        <div class="doc-name" style="color:var(--skill1)">code-archaeology.skill</div>
+        <div class="doc-desc">Scans repos and writes 6 markdown docs. Run first on every service.</div>
+        <div class="doc-used">Run via: Claude Code CLI or Claude.ai</div>
+      </div>
+      <div class="doc-card" style="border-color:#7eb4e8">
+        <div class="doc-name" style="color:var(--skill2)">story-generator.skill</div>
+        <div class="doc-desc">Reads docs and generates Jira stories. Needs Skill 1 docs present.</div>
+        <div class="doc-used">Run via: Claude.ai Projects or Claude Code</div>
+      </div>
+      <div class="doc-card" style="border-color:#c4b5fd">
+        <div class="doc-name" style="color:var(--skill3)">repo-qa.skill</div>
+        <div class="doc-desc">Answers questions using docs. No re-scanning needed after Skill 1.</div>
+        <div class="doc-used">Run via: Claude.ai Projects (team-accessible)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SKILL 1 ═══ -->
+<section class="sec p-arch" id="skill1">
+  <div class="sh">
+    <div class="si">🔍</div>
+    <div>
+      <div class="st-h">Skill 1 — Code Archaeology</div>
+      <div class="ss">What it does · How it detects repo type · What it produces</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🌳 What It Detects &amp; Scans</div>
+    <table>
+      <tr><th>Trigger File</th><th>Repo Type</th><th>What Gets Scanned</th></tr>
+      <tr><td><code>pom.xml</code></td><td><strong>Spring Boot / Java service</strong></td><td>Endpoints, entities, security, JPA, Flyway, test state, outbound calls, K8s manifests</td></tr>
+      <tr><td><code>package.json</code></td><td><strong>React / TypeScript UI</strong></td><td>Routes, auth token handling, API calls, component tree, env vars, build config</td></tr>
+      <tr><td>Both present</td><td><strong>Hybrid (e.g., monorepo)</strong></td><td>Both paths run; combined into single doc set</td></tr>
+      <tr><td><code>*.jar</code> in <code>/libs</code></td><td><strong>Shared JAR / library</strong></td><td>Public API surface, version contract, who depends on it</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">📄 6 Documents Produced</div>
+    <div class="g2">
+      <div>
+        <div class="doc-card" style="border-color:#86c9a0">
+          <div class="doc-name">SERVICE_PROFILE.md</div>
+          <div class="doc-desc">Identity, stack, API surface, data model, outbound calls, config keys. The "what this service is" document.</div>
+          <div class="doc-used">Used by: story-generator, repo-qa</div>
+        </div>
+        <div class="doc-card" style="border-color:#86c9a0;margin-top:8px">
+          <div class="doc-name">CLAUDE.md <span style="font-size:10px;color:var(--td)">(+ .github/copilot-instructions.md)</span></div>
+          <div class="doc-desc">Critical rules, auth model, code patterns, GKE config, danger zones, safe zones. Both Claude and Copilot read this automatically.</div>
+          <div class="doc-used">Auto-read by: Claude Code, GitHub Copilot</div>
+        </div>
+        <div class="doc-card" style="border-color:#86c9a0;margin-top:8px">
+          <div class="doc-name">APIGEE_AUTH_MAP.md</div>
+          <div class="doc-desc">Every endpoint's auth model (Basic Auth via Apigee / JWT passthrough / Public), forwarded headers, security findings.</div>
+          <div class="doc-used">Used by: story-generator (risk), repo-qa (auth questions)</div>
+        </div>
+      </div>
+      <div>
+        <div class="doc-card" style="border-color:#7eb4e8">
+          <div class="doc-name">GKE_READINESS.md</div>
+          <div class="doc-desc">Pass/Warn/Fail checklist: probes, JVM heap vs container limit, statelessness, graceful shutdown, ConfigMap/Secret usage.</div>
+          <div class="doc-used">Used by: story-generator (P1 GKE gaps), repo-qa</div>
+        </div>
+        <div class="doc-card" style="border-color:#7eb4e8;margin-top:8px">
+          <div class="doc-name">TEST_HEALTH.md</div>
+          <div class="doc-desc">JUnit version, coverage estimate, failing tests, zero-coverage classes, @Ignored tests, test infrastructure (H2 vs TestContainers).</div>
+          <div class="doc-used">Used by: story-generator (P2 test coverage gaps), repo-qa</div>
+        </div>
+        <div class="doc-card" style="border-color:#7eb4e8;margin-top:8px">
+          <div class="doc-name">DEPENDENCY_MAP.md</div>
+          <div class="doc-desc">Outbound service calls (with timeout/circuit breaker status), message bus topics, shared libraries, customer API contracts, risk summary.</div>
+          <div class="doc-used">Used by: all three skills</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">💬 Trigger Phrases for Skill 1</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:10px;">Say any of these in Claude to invoke the code-archaeology skill:</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"scan this repo"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"analyze this service"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"run code archaeology"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"create CLAUDE.md"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"document this codebase"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"train Copilot on this repo"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"update docs after merge"</span>
+      <span class="tag" style="color:var(--skill1);border-color:rgba(14,107,58,.3)">"the docs are stale"</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SKILL 2 ═══ -->
+<section class="sec p-story" id="skill2">
+  <div class="sh">
+    <div class="si">📝</div>
+    <div>
+      <div class="st-h">Skill 2 — Story Generator</div>
+      <div class="ss">Reads 6 docs → produces Jira-ready Type A + B stories with points and risk</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">📋 Type A — Reverse Stories</div>
+      <ul class="bl">
+        <li><strong>What:</strong> Documents existing behaviour as user stories</li>
+        <li><strong>Source:</strong> SERVICE_PROFILE.md API surface table</li>
+        <li><strong>Why:</strong> Creates regression baseline — "what must not change"</li>
+        <li><strong>Sprint:</strong> Baseline (no dev work, just documentation)</li>
+        <li><strong>Format:</strong> User story + acceptance criteria from actual code logic + auth model label</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch">🔧 Type B — Gap Stories</div>
+      <ul class="bl">
+        <li><strong>P1 (Sprint 0):</strong> Security gaps, GKE failures, failing tests</li>
+        <li><strong>P2 (Sprint 1-2):</strong> Test coverage, reliability, missing timeouts</li>
+        <li><strong>P3 (Dedicated):</strong> Framework upgrades, major refactors</li>
+        <li><strong>Source:</strong> APIGEE_AUTH_MAP findings + GKE_READINESS fails + TEST_HEALTH zero-coverage</li>
+        <li><strong>Rule:</strong> P3 upgrades always in their own sprint — never bundled</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📊 Story Output Example</div>
+    <pre style="font-size:12px"><span style="color:#56d364">## US-E001 [Existing] Customer Auth via Apigee  — user-service</span>
+
+<span style="color:#79c0ff">User Story</span>
+As a customer application, I can authenticate and access user data
+So that I can display profile information in my portal.
+
+<span style="color:#79c0ff">Implementation</span>  UserController.getUserById → UserService.findById
+Auth: BASIC_AUTH_VIA_APIGEE | Customer-facing: YES
+
+<span style="color:#79c0ff">Acceptance Criteria</span>
+- Given valid X-Consumer-ID header (set by Apigee)
+- When GET /api/v1/users/{id}
+- Then 200 returned with UserResponse DTO
+- And 404 if user not found with {code:"USER_NOT_FOUND",message,timestamp}
+- And 403 if X-Consumer-ID missing or blank
+
+Story Points: 3 | Risk: HIGH | Sprint: Baseline
+
+<span style="color:#f87171">## US-G001 [Fix] POST /users missing input validation — SECURITY</span>
+
+Gap Type: SECURITY | Source: APIGEE_AUTH_MAP.md findings
+Problem: @RequestBody not annotated @Valid — no constraint checking on input
+Story Points: 3 | Priority: P1 | Touches Customer API: YES | Sprint: Sprint 0</pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">💬 Trigger Phrases for Skill 2</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"create stories for this service"</span>
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"generate Jira tickets"</span>
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"break down this epic"</span>
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"create backlog from code"</span>
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"what stories should we write"</span>
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"estimate this epic"</span>
+      <span class="tag" style="color:var(--skill2);border-color:rgba(31,95,166,.3)">"plan sprint for service X"</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SKILL 3 ═══ -->
+<section class="sec p-qa" id="skill3">
+  <div class="sh">
+    <div class="si">💬</div>
+    <div>
+      <div class="st-h">Skill 3 — Repo QA</div>
+      <div class="ss">Instant answers from markdown docs — no source code re-scanning</div>
+    </div>
+  </div>
+
+  <div class="alert al-purple">
+    <span class="al-ico">🪙</span>
+    <div><strong>Token efficiency design:</strong> Repo QA loads only the specific doc(s) needed for each question type. A question about auth loads only APIGEE_AUTH_MAP.md + CLAUDE.md. A question about endpoints loads only SERVICE_PROFILE.md. This keeps each QA session at 1,000–3,000 tokens vs 15,000+ for re-scanning source code.</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">💡 Example Questions &amp; Answers</div>
+    <table>
+      <tr><th>Question</th><th>Docs Loaded</th><th>Example Answer</th></tr>
+      <tr><td>"How does auth work?"</td><td>APIGEE_AUTH_MAP + CLAUDE</td><td>Pattern A: Apigee strips Basic Auth, passes X-Consumer-ID. Pattern B: JWT forwarded, JwtAuthFilter validates locally.</td></tr>
+      <tr><td>"Is it safe to change UserService.findByEmail()?"</td><td>DEPENDENCY_MAP + CLAUDE</td><td>⚠️ HIGH risk — called by 4 other services. Characterization test required first. See DEPENDENCY_MAP.md.</td></tr>
+      <tr><td>"What endpoints does order-service expose?"</td><td>SERVICE_PROFILE</td><td>Pastes the API Surface table verbatim.</td></tr>
+      <tr><td>"How do I write a test for this service?"</td><td>CLAUDE + TEST_HEALTH</td><td>JUnit 4, Mockito, extend BaseServiceTest, H2 in-memory. Controller tests: add X-Consumer-ID header for Pattern A endpoints.</td></tr>
+      <tr><td>"What story points for adding date-range filter?"</td><td>SERVICE_PROFILE + DEPENDENCY_MAP</td><td>Similar to existing search endpoint (3pt). Add 1pt for customer-facing risk. Recommend: 5pt.</td></tr>
+      <tr><td>"What's broken in the GKE setup?"</td><td>GKE_READINESS</td><td>2 FAILs: JVM -Xmx512m exceeds 75% of 512Mi limit; no PodDisruptionBudget. Paste fix from GKE_READINESS.md.</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">💬 Trigger Phrases for Skill 3</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"how does X work in this service"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"is it safe to change"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"what's the pattern for"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"how do I add a new endpoint"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"what tests exist"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"who calls this method"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"what headers does Apigee send"</span>
+      <span class="tag" style="color:var(--skill3);border-color:rgba(124,58,237,.3)">"what's the risk of"</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DOCS FORMAT ═══ -->
+<section class="sec" id="docs">
+  <div class="sh">
+    <div class="si" style="background:linear-gradient(135deg,#fffbe8,#fff0b8);border:1px solid #e8d068">📐</div>
+    <div>
+      <div class="st-h">Document Format — Token-Efficient Design</div>
+      <div class="ss">Why the docs are structured the way they are — and what to expect</div>
+    </div>
+  </div>
+
+  <div class="alert al-amber">
+    <span class="al-ico">🪙</span>
+    <div><strong>Design principle:</strong> Each document is designed to answer a specific set of questions using the fewest tokens. Tables over prose. Symbols (✅⚠️❌) over words. Class names without package paths. Config key names only, never values. A full service's 6 docs should total under 800 lines — scannable in under 5 minutes by any developer.</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📊 CLAUDE.md Structure (core training doc)</div>
+    <pre style="font-size:11.5px"><span style="color:#79c0ff"># CLAUDE.md — user-service</span>
+<span style="color:#3d6b40"><!-- Claude Code auto-reads this. Copilot reads .github/copilot-instructions.md --></span>
+<span style="color:#3d6b40"><!-- Keep under 400 lines. Dense > verbose --></span>
+
+<span style="color:#56d364">## CRITICAL RULES</span>
+1. NEVER modify customer-facing APIs without explicit human approval
+2. NEVER add Basic Auth parsing — Apigee handles it upstream
+3. NEVER hardcode secrets — use K8s Secrets / ConfigMap refs
+
+<span style="color:#56d364">## Auth Model</span>
+- Pattern A: Apigee validates → service sees X-Consumer-ID header only
+- Pattern B: JWT forwarded → JwtAuthFilter re-validates locally
+- Public: @PublicEndpoint → /actuator/**, /api/v1/health
+
+<span style="color:#56d364">## Code Patterns</span>
+| Concern | Pattern | Example class |
+|---------|---------|--------------|
+| Exceptions | GlobalExceptionHandler → {code,message,timestamp} | GlobalExceptionHandler |
+| Tests | JUnit 4, Mockito, H2 | BaseServiceTest |
+
+<span style="color:#56d364">## GKE Config</span>
+| Setting | Value |
+| Memory limit | 512Mi |
+| JVM Xmx | 384m |
+
+<span style="color:#f87171">## Danger Zones ⚠️</span>
+| Class/Method | Risk | Why |
+| UserRepository.findByEmail | HIGH | Called by 4 services |
+| JWT token structure | HIGH | Breaking change for all consumers |</pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">📊 Token Count Comparison</div>
+    <table>
+      <tr><th>Approach</th><th>Typical Tokens</th><th>Accuracy</th><th>Reusable?</th></tr>
+      <tr><td>Re-scan source code per question</td><td>~15,000–40,000</td><td>High</td><td>No</td></tr>
+      <tr><td>Load all 6 markdown docs</td><td>~5,000–8,000</td><td>High</td><td>Yes</td></tr>
+      <tr><td>Load 1–2 targeted docs (repo-qa)</td><td>~1,000–3,000</td><td>High for targeted Q</td><td>Yes ✅</td></tr>
+      <tr><td>Just CLAUDE.md for pattern questions</td><td>~400–700</td><td>Medium</td><td>Yes ✅</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ INSTALL ═══ -->
+<section class="sec p-setup" id="install">
+  <div class="sh">
+    <div class="si">📦</div>
+    <div>
+      <div class="st-h">Install the 3 Skills</div>
+      <div class="ss">Two installation paths: Claude.ai Projects (team use) and Claude Code CLI (dev terminal)</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">🌐 Path A — Claude.ai Projects (Recommended for Team)</div>
+      <ol class="steps">
+        <li>
+          <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">1</div>
+          <div class="sc"><strong>Go to Claude.ai → Projects → Create New Project</strong><p>Create three separate projects — one per skill. Name them: "Code Archaeology", "Story Generator", "Repo QA".</p></div>
+        </li>
+        <li>
+          <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">2</div>
+          <div class="sc"><strong>For each project: open "Custom Instructions"</strong><p>Paste the entire contents of the corresponding <code>SKILL.md</code> file into the Custom Instructions box. This is the skill's system prompt.</p></div>
+        </li>
+        <li>
+          <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">3</div>
+          <div class="sc"><strong>Add the skill .md files as Project knowledge</strong><p>Upload <code>SKILL.md</code> as a Knowledge document in each project — this ensures Claude can reference the skill's doc templates when generating outputs.</p></div>
+        </li>
+        <li>
+          <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">4</div>
+          <div class="sc"><strong>Share projects with your team</strong><p>In Claude Team/Enterprise: click the project → Share → add team members. Everyone in the team can now use all three skills.</p></div>
+        </li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="ch">💻 Path B — Claude Code CLI (Dev Terminal)</div>
+      <ol class="steps">
+        <li>
+          <div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--c3)">1</div>
+          <div class="sc"><strong>Create skills directory</strong>
+          <pre style="font-size:11px">mkdir -p ~/.claude/skills
+cd ~/.claude/skills</pre>
+          </div>
+        </li>
+        <li>
+          <div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--c3)">2</div>
+          <div class="sc"><strong>Copy skill folders</strong>
+          <pre style="font-size:11px">cp -r code-archaeology ~/.claude/skills/
+cp -r story-generator ~/.claude/skills/
+cp -r repo-qa ~/.claude/skills/</pre>
+          </div>
+        </li>
+        <li>
+          <div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--c3)">3</div>
+          <div class="sc"><strong>Verify Claude Code can see skills</strong>
+          <pre style="font-size:11px">claude
+# In session type:
+/skills list
+# Should show: code-archaeology, story-generator, repo-qa</pre>
+          </div>
+        </li>
+        <li>
+          <div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--c3)">4</div>
+          <div class="sc"><strong>Or install from .skill files</strong>
+          <pre style="font-size:11px">claude skill install code-archaeology.skill
+claude skill install story-generator.skill
+claude skill install repo-qa.skill</pre>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔗 Copilot Integration — One Step Per Repo</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:10px;">After Skill 1 runs on a repo, it auto-creates <code>.github/copilot-instructions.md</code>. Copilot reads this file automatically — no further setup needed in VS Code.</p>
+    <pre style="font-size:11.5px"><span style="color:#3d6b40"># Copilot reads this file automatically for every suggestion in this repo</span>
+<span style="color:#3d6b40"># Generated by code-archaeology skill — update with: "update docs after merge"</span>
+
+<span style="color:#56d364">## CRITICAL RULES</span>
+1. NEVER modify customer-facing APIs without approval
+2. NEVER add Basic Auth parsing — Apigee handles it
+3. NEVER hardcode secrets — K8s ConfigMap/Secret only
+...
+<span style="color:#3d6b40"># (condensed CLAUDE.md — max 80 lines)</span></pre>
+  </div>
+</section>
+
+<!-- ═══ EXECUTE PER REPO ═══ -->
+<section class="sec p-arch" id="execute">
+  <div class="sh">
+    <div class="si">▶️</div>
+    <div>
+      <div class="st-h">Execute — Per-Repo Runbook</div>
+      <div class="ss">Exact steps for Spring Boot services, React UI apps, and shared JARs</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔄 For Every Repo — Universal Steps (Run Once)</div>
+    <ol class="steps">
+      <li>
+        <div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:var(--skill1)">1</div>
+        <div class="sc"><strong>Open the repo in its own VS Code window</strong><p>Don't open multiple services together. One service = one workspace for best Copilot context quality.</p></div>
+      </li>
+      <li>
+        <div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:var(--skill1)">2</div>
+        <div class="sc"><strong>Open terminal in the repo root → start Claude Code</strong><pre style="font-size:11px">cd /path/to/your/service
+claude</pre></div>
+      </li>
+      <li>
+        <div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:var(--skill1)">3</div>
+        <div class="sc"><strong>Trigger Skill 1 — Code Archaeology</strong><pre style="font-size:11px">Run code archaeology on this repo.
+This is a production service on GKE exposed via Apigee.
+Auth: some endpoints use Basic Auth via Apigee, others JWT passthrough.</pre>
+        <p>Claude Code detects repo type, scans, and writes all 6 docs. Takes 10–20 minutes per service.</p></div>
+      </li>
+      <li>
+        <div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:var(--skill1)">4</div>
+        <div class="sc"><strong>Review the generated docs (5 min)</strong><p>Spot-check CLAUDE.md danger zones, APIGEE_AUTH_MAP endpoint list, GKE_READINESS FAIL items. Correct anything obviously wrong by editing the markdown file directly.</p></div>
+      </li>
+      <li>
+        <div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:var(--skill1)">5</div>
+        <div class="sc"><strong>Commit all 6 docs to the repo</strong><pre style="font-size:11px">git add SERVICE_PROFILE.md CLAUDE.md APIGEE_AUTH_MAP.md \
+    GKE_READINESS.md TEST_HEALTH.md DEPENDENCY_MAP.md \
+    .github/copilot-instructions.md
+git commit -m "docs: add code archaeology knowledge base [code-archaeology-skill]"
+git push</pre></div>
+      </li>
+      <li>
+        <div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--c1)">6</div>
+        <div class="sc"><strong>Generate stories (Skill 2) — optional same session</strong><pre style="font-size:11px">Generate user stories for this service from the docs just created.
+The epic is: [paste your epic text here]</pre></div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="ch">☕ Spring Boot Service — Additional Context to Provide</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:10px;">After starting Claude Code, provide this context before running archaeology to get the most accurate APIGEE_AUTH_MAP.md:</p>
+    <pre style="font-size:12px">Context for this service before you scan:
+- Apigee proxy name: {proxy-name} (check API GW dashboard if known)
+- Customer A (company name) uses: {/api/v1/pattern/**}
+- Customer B (company name) uses: {/api/v2/pattern/**}
+- JWT claim structure: {userId, roles[], sessionId, exp} (or your actual claims)
+- JUnit version in use: {4 or 5} (or check pom.xml)
+- H2 or TestContainers for integration tests: {H2 / TestContainers / unknown}
+- Any known shared tables with other services: {table names or unknown}</pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">⚛️ React / TypeScript UI — Additional Context</div>
+    <pre style="font-size:12px">Context for this React app before you scan:
+- API base URL config key: {REACT_APP_API_URL or VITE_API_URL etc.}
+- Auth token storage: {localStorage key name or sessionStorage}
+- User roles: {list role names used in conditional rendering}
+- Apigee: UI calls Apigee directly? YES/NO
+  If YES: {API key stored in: env var name}
+- Build target: {Create React App / Vite / Next.js}</pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">📦 Shared JAR / Library — Additional Context</div>
+    <pre style="font-size:12px">Context for this shared library before you scan:
+- Who uses this JAR: {list service names}
+- Current deployed version: {from Nexus/Artifactory or pom.xml}
+- Is it published to internal Maven repo: YES/NO
+- Breaking change policy: {semantic versioning / internal policy}</pre>
+  </div>
+</section>
+
+<!-- ═══ TESTING ═══ -->
+<section class="sec p-test" id="testing">
+  <div class="sh">
+    <div class="si">🧪</div>
+    <div>
+      <div class="st-h">Test &amp; Verify — How to Know It's Working</div>
+      <div class="ss">4 verification tests per skill after installation</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">✅ Skill 1 Verification (Code Archaeology)</div>
+    <table>
+      <tr><th>#</th><th>Ask Claude</th><th>Expected result</th></tr>
+      <tr><td>1</td><td>"How many endpoints does user-service expose?"</td><td>Answers with a number, citing SERVICE_PROFILE.md API Surface table — does not re-scan code</td></tr>
+      <tr><td>2</td><td>"Did the scan find any P1 security issues?"</td><td>Lists items from APIGEE_AUTH_MAP.md Security Findings section</td></tr>
+      <tr><td>3</td><td>"What's the JVM memory setting for this service?"</td><td>Returns value from GKE_READINESS.md — correct if it matches your k8s deployment.yaml</td></tr>
+      <tr><td>4</td><td>"Which tests are currently failing?"</td><td>Lists contents of TEST_HEALTH.md Failing Tests section</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">✅ Skill 2 Verification (Story Generator)</div>
+    <table>
+      <tr><th>#</th><th>Ask Claude</th><th>Expected result</th></tr>
+      <tr><td>1</td><td>"Generate stories for user-service from the docs"</td><td>Produces Type A stories for each endpoint + Type B gap stories with P1/P2/P3 priority</td></tr>
+      <tr><td>2</td><td>"Which stories are P1 for Sprint 0?"</td><td>Lists only security/GKE/failing-test gaps — no features in Sprint 0</td></tr>
+      <tr><td>3</td><td>"Are any stories marked HIGH risk?"</td><td>Lists stories where endpoint appears in DEPENDENCY_MAP customer contracts</td></tr>
+      <tr><td>4</td><td>"What's the total story points for Sprint 1?"</td><td>Provides a point total ≤ 30 (if it's over, flag for human review)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">✅ Skill 3 Verification (Repo QA)</div>
+    <table>
+      <tr><th>#</th><th>Ask Claude</th><th>Expected result</th></tr>
+      <tr><td>1</td><td>"How does auth work in order-service?"</td><td>Describes Pattern A and B from APIGEE_AUTH_MAP.md — does not guess</td></tr>
+      <tr><td>2</td><td>"Is it safe to change UserRepository.findByEmail()?"</td><td>Returns HIGH risk with specific caller list from DEPENDENCY_MAP.md</td></tr>
+      <tr><td>3</td><td>"How do I write a unit test for UserService?"</td><td>Returns JUnit version, base class name, mock setup — matches your actual codebase</td></tr>
+      <tr><td>4</td><td>"What story points for adding a date-range filter?"</td><td>Suggests 3–5pt based on similar endpoints in SERVICE_PROFILE.md</td></tr>
+    </table>
+  </div>
+
+  <div class="alert al-green">
+    <span class="al-ico">✅</span>
+    <div><strong>Gold standard:</strong> If a developer who is new to the codebase can get accurate, specific answers to all 12 verification questions above without opening a single source file — the skill system is working correctly. That's the goal.</div>
+  </div>
+</section>
+
+<!-- ═══ TOKEN GUIDE ═══ -->
+<section class="sec" id="tokens">
+  <div class="sh">
+    <div class="si" style="background:linear-gradient(135deg,#fffbe8,#fff0b8);border:1px solid #e8d068">🪙</div>
+    <div>
+      <div class="st-h">Token Efficiency — Why the Docs Are Designed This Way</div>
+      <div class="ss">8 rules baked into every document the archaeology skill produces</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">📉 Design Rules Applied to All Docs</div>
+      <ol class="steps">
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">1</div><div class="sc"><strong>Tables over paragraphs — always</strong><p>A 10-row table communicates the same information as 10 paragraphs at ~20% of the token cost.</p></div></li>
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">2</div><div class="sc"><strong>✅ ⚠️ ❌ over words</strong><p>"Pass / Warning / Fail" costs 3x more tokens than the symbol equivalents.</p></div></li>
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">3</div><div class="sc"><strong>Purpose cells: 3 words max</strong><p>"PostgreSQL user database" not "A PostgreSQL relational database that stores all user account information."</p></div></li>
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">4</div><div class="sc"><strong>Class names without package paths</strong><p><code>UserService</code> not <code>com.company.platform.user.service.UserService</code> unless ambiguous.</p></div></li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="ch">📉 More Token Rules</div>
+      <ol class="steps" start="5">
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">5</div><div class="sc"><strong>Config key names only — never values</strong><p>Write <code>DB_PASSWORD</code> not the actual password. Prevents secrets in docs AND saves tokens.</p></div></li>
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">6</div><div class="sc"><strong>Redact URLs to pattern</strong><p><code>{order-service-url}/api/v1/orders</code> not <code>http://order-service.production.svc.cluster.local:8082/api/v1/orders</code></p></div></li>
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">7</div><div class="sc"><strong>Omit implied Spring annotations</strong><p><code>@Service, @Component, @Repository</code> are implied by class names — no need to list them.</p></div></li>
+        <li><div class="sn" style="background:#fff7e6;border:1px solid #f5c97a;color:var(--c6)">8</div><div class="sc"><strong>Repo-QA loads minimum docs per question</strong><p>Auth question → loads 2 docs (~1,500 tokens). Re-scanning source → 15,000–40,000 tokens. 10–25x saving.</p></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CHEATSHEET ═══ -->
+<section class="sec" id="cheatsheet">
+  <div class="sh">
+    <div class="si" style="background:linear-gradient(135deg,#e8f4ff,#d0e8ff);border:1px solid #93c5e8">📋</div>
+    <div>
+      <div class="st-h">Complete Cheatsheet</div>
+      <div class="ss">Everything on one page for day-to-day use</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🗓 Per-Repo Execution Order (Every Service)</div>
+    <table>
+      <tr><th>Step</th><th>Action</th><th>Time</th><th>Output</th></tr>
+      <tr><td>1</td><td>Open repo in VS Code (standalone, not multi-service)</td><td>1 min</td><td>—</td></tr>
+      <tr><td>2</td><td>Open terminal → <code>claude</code></td><td>1 min</td><td>Claude Code session</td></tr>
+      <tr><td>3</td><td>Provide service context (Apigee proxy, customer URLs, JUnit version)</td><td>2 min</td><td>Claude understands scope</td></tr>
+      <tr><td>4</td><td>"Run code archaeology on this repo"</td><td>10–20 min</td><td>6 markdown docs + copilot-instructions.md</td></tr>
+      <tr><td>5</td><td>Review docs — correct errors in CLAUDE.md Danger Zones</td><td>5 min</td><td>Accurate docs</td></tr>
+      <tr><td>6</td><td><code>git commit -m "docs: code archaeology"</code></td><td>1 min</td><td>Docs in repo</td></tr>
+      <tr><td>7</td><td>"Generate stories from docs" (optional)</td><td>5 min</td><td>Type A + B stories for Jira</td></tr>
+      <tr><td>8</td><td>Run 12 verification questions</td><td>10 min</td><td>Skills verified ✅</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔄 When to Re-Run Code Archaeology</div>
+    <table>
+      <tr><th>Trigger</th><th>Which Docs to Update</th><th>How</th></tr>
+      <tr><td>New endpoints added</td><td>SERVICE_PROFILE.md, APIGEE_AUTH_MAP.md</td><td>"Update docs after merge"</td></tr>
+      <tr><td>New K8s manifests / resource changes</td><td>GKE_READINESS.md, CLAUDE.md</td><td>"Refresh GKE readiness"</td></tr>
+      <tr><td>New service dependencies added</td><td>DEPENDENCY_MAP.md</td><td>"Update dependency map"</td></tr>
+      <tr><td>Tests fixed / coverage improved</td><td>TEST_HEALTH.md</td><td>"Refresh test health"</td></tr>
+      <tr><td>Major refactor / framework upgrade</td><td>All 6 docs</td><td>"Run full code archaeology"</td></tr>
+      <tr><td>Docs are &gt; 90 days old</td><td>All 6 docs</td><td>"The docs are stale, re-run archaeology"</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">📊 Multi-Service Priority Order</div>
+    <p style="color:var(--tm);font-size:13px;margin-bottom:10px;">Run code archaeology in this priority order across your services:</p>
+    <table>
+      <tr><th>Priority</th><th>Service Type</th><th>Reason</th></tr>
+      <tr><td><strong>1st</strong></td><td>Customer-facing APIs (Apigee-fronted, Basic Auth or JWT)</td><td>Highest risk. Auth map and dependency map most critical.</td></tr>
+      <tr><td><strong>2nd</strong></td><td>Services called by customer-facing services (downstream)</td><td>Dependency map accuracy needs both sides scanned.</td></tr>
+      <tr><td><strong>3rd</strong></td><td>React / UI application</td><td>Lower security risk but reveals API integration mismatches.</td></tr>
+      <tr><td><strong>4th</strong></td><td>Internal-only services</td><td>No external risk but needed for complete dependency graph.</td></tr>
+      <tr><td><strong>5th</strong></td><td>Shared JARs / libraries</td><td>Last because they don't change often; version contract matters most.</td></tr>
+    </table>
+  </div>
+</section>
+
+<hr>
+<div class="final-box">
+  <div class="fb-t">📍 Start Right Now — 3 Commands</div>
+  <pre># 1. Install Claude Code (if not done)
+npm install -g @anthropic-ai/claude-code && claude login
+
+# 2. Navigate to your most critical service (customer-facing first)
+cd /path/to/your/user-service
+
+# 3. Run Claude Code and trigger Skill 1
+claude
+
+# In Claude Code session, paste:
+# "Run code archaeology on this repo. This is a production
+#  Spring Boot service on GKE exposed via Apigee. Some
+#  endpoints use Basic Auth at Apigee, others JWT passthrough."
+
+# After it completes (10-20 min), commit docs and test with:
+# "How does auth work in this service?"   ← tests Skill 1 + Skill 3
+# "Generate stories from the docs"         ← tests Skill 2
+# "Is it safe to change UserRepository?"   ← tests Skill 3 depth
+
+# Repeat for each service.
+# Total across 8 services: ~2 days for full knowledge base.</pre>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;text-align:center">
+    <div><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#79c0ff">3</div><div style="font-size:11px;color:#6e7781">Skills to install</div></div>
+    <div><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#56d364">6</div><div style="font-size:11px;color:#6e7781">Docs per repo</div></div>
+    <div><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#c4b5fd">10×</div><div style="font-size:11px;color:#6e7781">Fewer tokens per QA session</div></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
