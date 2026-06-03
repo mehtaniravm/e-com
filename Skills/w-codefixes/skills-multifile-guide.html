@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Skills for Copilot + Claude — Multi-File Setup with CodeFixes</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f7fb;--white:#fff;--s2:#eef1f8;--s3:#e4e9f4;
+    --bd:#cdd5e8;--bd2:#b4c0d8;
+    --blue:#1f6feb;--violet:#7c3aed;--green:#0e9e5c;--orange:#d4600a;
+    --red:#c0392b;--amber:#a07800;--teal:#0891b2;
+    --copilot:#1f6feb;--claude:#d97706;--shared:#7c3aed;
+    --fix1:#c0392b;--fix2:#d4600a;--fix3:#a07800;
+    --tx:#1a2640;--tm:#3f5270;--td:#6b82a0;
+    --sh:0 1px 4px rgba(0,40,100,.08),0 4px 16px rgba(0,40,100,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-size:14px;line-height:1.75}
+
+  /* HERO */
+  .hero{padding:52px 44px 44px;background:linear-gradient(150deg,#0a1322 0%,#11233e 55%,#0a1322 100%);position:relative;overflow:hidden;border-bottom:3px solid var(--blue)}
+  .hero::before{content:'';position:absolute;top:-120px;right:-60px;width:520px;height:520px;background:radial-gradient(circle,rgba(31,111,235,.08) 0%,transparent 65%)}
+  .hero::after{content:'';position:absolute;bottom:-80px;left:25%;width:380px;height:380px;background:radial-gradient(circle,rgba(124,58,237,.06) 0%,transparent 65%)}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:#79c0ff;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+  .eyebrow::before{content:'';width:28px;height:1px;background:#79c0ff}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,3.6vw,36px);font-weight:800;line-height:1.14;margin-bottom:14px;color:#fff;position:relative;z-index:1}
+  .hero h1 .a{color:#79c0ff}.hero h1 .b{color:#fbbf24}.hero h1 .c{color:#c4b5fd}
+  .hero p{color:#9bb0cc;font-size:15px;max-width:730px;margin-bottom:22px;position:relative;z-index:1}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.74);background:rgba(255,255,255,.06)}
+
+  /* NAV */
+  .nav{background:#fff;border-bottom:2px solid var(--bd);padding:0 44px;display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,40,100,.07)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{padding:13px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s;margin-bottom:-2px}
+  .nav a:hover{color:var(--blue);border-bottom-color:var(--blue)}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:44px 44px 100px}
+
+  /* SECTION */
+  .sec{margin-bottom:54px;scroll-margin-top:60px}
+  .sh{display:flex;align-items:flex-start;gap:16px;margin-bottom:24px}
+  .si{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:var(--sh)}
+  .st-h{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--tx)}
+  .ss{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);margin-top:4px}
+
+  /* CARDS */
+  .card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:22px;margin-bottom:14px;box-shadow:var(--sh)}
+  .ch{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:9px}
+
+  /* CODE / TREE */
+  pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;margin:10px 0;color:#c9d1d9}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(31,111,235,.09);border:1px solid rgba(31,111,235,.18);border-radius:4px;padding:1px 6px;color:var(--blue)}
+  .tree{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:2;overflow-x:auto}
+  .t-dir{color:#79c0ff;font-weight:600}
+  .t-file{color:#c9d1d9}
+  .t-cm{color:#8b949e}
+  .t-claude{color:#fbbf24}
+  .t-copilot{color:#56d364}
+  .t-shared{color:#c4b5fd}
+  .t-fix{color:#ff7b72}
+
+  /* GRID */
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 13px;background:var(--s2);color:var(--td);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:left;border-bottom:2px solid var(--bd)}
+  td{padding:10px 13px;border-bottom:1px solid var(--s3);vertical-align:top;color:var(--tm)}
+  td strong{color:var(--tx)} td code{font-size:11px}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--s2)}
+
+  /* ALERTS */
+  .alert{border-radius:10px;padding:13px 17px;margin:14px 0;font-size:13px;display:flex;gap:11px;align-items:flex-start}
+  .al-blue{background:#dbeafe;border:1px solid #93c5fd;color:#1e3a8a}
+  .al-green{background:#dcfce7;border:1px solid #86efac;color:#14532d}
+  .al-amber{background:#fff7e6;border:1px solid #f5c97a;color:#7a4a00}
+  .al-red{background:#fee2e2;border:1px solid #fca5a5;color:#7f1d1d}
+  .al-violet{background:#ede9fe;border:1px solid #c4b5fd;color:#3b0764}
+  .al-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+  .alert strong{font-weight:600}
+
+  /* STEPS */
+  .steps{list-style:none}
+  .step{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--s3)}
+  .step:last-child{border-bottom:none}
+  .sn{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px}
+  .sc strong{display:block;color:var(--tx);margin-bottom:3px;font-size:13px;font-weight:600}
+  .sc p{color:var(--tm);font-size:12.5px}
+
+  /* TOOL BADGE */
+  .badge{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:500}
+  .b-copilot{background:rgba(31,111,235,.1);border:1px solid rgba(31,111,235,.3);color:var(--copilot)}
+  .b-claude{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3);color:var(--claude)}
+  .b-shared{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:var(--shared)}
+
+  /* FILE CARD */
+  .fcard{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:14px 16px;box-shadow:var(--sh)}
+  .fc-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;margin-bottom:5px}
+  .fc-desc{font-size:11.5px;color:var(--tm);line-height:1.5}
+  .fc-size{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--td);margin-top:5px}
+
+  /* FLOW */
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--s2);border-radius:10px;padding:16px 18px;border:1px solid var(--bd);margin:10px 0}
+  .fn{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 13px;font-size:11.5px;color:var(--tx);font-family:'JetBrains Mono',monospace;box-shadow:var(--sh);text-align:center}
+  .fa{color:var(--td);font-size:14px;font-weight:700}
+
+  ul.bl{padding-left:18px}
+  ul.bl li{margin-bottom:6px;color:var(--tm);font-size:13px}
+  ul.bl li strong{color:var(--tx);font-weight:600}
+  hr{border:none;border-top:1px solid var(--bd);margin:34px 0}
+
+  /* phase colors */
+  .p-arch .si{background:linear-gradient(135deg,#e6f4ec,#c8f0da);border:1px solid #7dca9e}
+  .p-fix .si{background:linear-gradient(135deg,#fff0ef,#fdd8d6);border:1px solid #f0a09a}
+  .p-wire .si{background:linear-gradient(135deg,#ede9fe,#ddd0f8);border:1px solid #b89de8}
+  .p-story .si{background:linear-gradient(135deg,#dbeafe,#c2d8f5);border:1px solid #7eb4e8}
+  .p-qa .si{background:linear-gradient(135deg,#f0eaff,#ddd0f8);border:1px solid #b89de8}
+  .p-setup .si{background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097}
+  .p-test .si{background:linear-gradient(135deg,#e6f7f9,#c0ecf2);border:1px solid #7dd4e0}
+
+  .final{background:linear-gradient(135deg,#0a1322,#11233e);border-radius:14px;padding:28px;color:#fff;margin-top:8px;border:1px solid #1c3050}
+  .final pre{background:#06101e;border-color:#1e3050;color:#a8c8e8}
+  .final .ft{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px;color:#fff}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 16px}
+  .leg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tm)}
+  .leg-sw{width:14px;height:14px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">3 AI Skills · Many Small Files · Copilot + Claude + CodeFixes</div>
+  <h1>One Scan → <span class="a">Copilot</span> + <span class="b">Claude</span> Both Trained<br>Plus a <span class="c">CodeFixes</span> Folder With Exact Fixes</h1>
+  <p>A skill system that writes many tiny, focused files — wired into both tools' native agent files (AGENTS.md, CLAUDE.md, copilot-instructions.md). Generates per-finding CodeFix files with exact line numbers, signatures, and suggested code. Works on Spring Boot, React UI, and shared JARs.</p>
+  <div class="chips">
+    <span class="chip">📁 Many small files (&lt;80 lines each)</span>
+    <span class="chip">🤖 Copilot + Claude both wired</span>
+    <span class="chip">🔧 CodeFixes/ per-finding</span>
+    <span class="chip">📋 AGENTS.md shared spec</span>
+    <span class="chip">🪙 Token-light by design</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#why">What Changed</a>
+  <a href="#files">All Files</a>
+  <a href="#wiring">Tool Wiring</a>
+  <a href="#codefixes">CodeFixes</a>
+  <a href="#install">Install</a>
+  <a href="#run">Run Per Repo</a>
+  <a href="#verify">Verify</a>
+  <a href="#stories">Stories &amp; QA</a>
+  <a href="#cheatsheet">Cheatsheet</a>
+</nav>
+
+<div class="wrap">
+
+<!-- WHAT CHANGED -->
+<section class="sec p-arch" id="why">
+  <div class="sh">
+    <div class="si">🔄</div>
+    <div>
+      <div class="st-h">What Changed From the Previous Version</div>
+      <div class="ss">Three things you asked for — now built in</div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="ch">📁 Many Small Files</div>
+      <p style="font-size:13px;color:var(--tm)">The old version made 6 big docs. Now: <strong>many tiny files under 80 lines each</strong> — one concern per file (stack, auth, gke, tests…). Loads faster, fewer tokens, easier to update one piece without touching others.</p>
+    </div>
+    <div class="card">
+      <div class="ch">🤖 Both Tools Wired</div>
+      <p style="font-size:13px;color:var(--tm)">Files now land in <strong>both</strong> tools' native locations: <code>CLAUDE.md</code> + <code>.claude/</code> for Claude, <code>.github/copilot-instructions.md</code> + <code>.github/prompts/</code> for Copilot, and a shared <code>AGENTS.md</code> both read.</p>
+    </div>
+    <div class="card">
+      <div class="ch">🔧 CodeFixes Folder</div>
+      <p style="font-size:13px;color:var(--tm)">New <code>CodeFixes/</code> folder — <strong>one file per risky finding</strong> with exact file path, line number, method signature, current code, and suggested replacement code. Plus a "why this is safe" section.</p>
+    </div>
+  </div>
+
+  <div class="alert al-blue">
+    <span class="al-ico">💡</span>
+    <div><strong>Why split into many small files?</strong> When a developer asks "how does auth work?", the tool loads only <code>auth.md</code> (~40 lines) instead of a 400-line mega-doc. When code changes, you regenerate only the affected file. And Git diffs stay clean — a dependency change touches only <code>deps.md</code>.</div>
+  </div>
+</section>
+
+<!-- ALL FILES -->
+<section class="sec p-arch" id="files">
+  <div class="sh">
+    <div class="si">📂</div>
+    <div>
+      <div class="st-h">Every File the Archaeology Skill Writes</div>
+      <div class="ss">Colour-coded by which tool consumes it</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><span class="leg-sw" style="background:#fbbf24"></span> Claude Code reads</div>
+    <div class="leg"><span class="leg-sw" style="background:#56d364"></span> Copilot reads</div>
+    <div class="leg"><span class="leg-sw" style="background:#c4b5fd"></span> Both read (shared)</div>
+    <div class="leg"><span class="leg-sw" style="background:#ff7b72"></span> CodeFixes (actionable)</div>
+  </div>
+
+  <div class="tree">
+<span class="t-dir">repo-root/</span>
+├── <span class="t-claude">CLAUDE.md</span>                          <span class="t-cm"># Claude Code auto-reads (index → context files)</span>
+├── <span class="t-shared">AGENTS.md</span>                          <span class="t-cm"># Shared spec — Copilot + Claude + Cursor read this</span>
+├── <span class="t-dir">.claude/</span>
+│   ├── <span class="t-dir">agents/</span>
+│   │   ├── <span class="t-claude">archaeologist.md</span>           <span class="t-cm"># Sub-agent: answers questions about this repo</span>
+│   │   ├── <span class="t-claude">reviewer.md</span>                <span class="t-cm"># Sub-agent: reviews changes vs standards</span>
+│   │   └── <span class="t-claude">story-helper.md</span>            <span class="t-cm"># Sub-agent: estimates + writes stories</span>
+│   └── <span class="t-dir">context/</span>                       <span class="t-cm"># 7 tiny files — loaded on demand</span>
+│       ├── <span class="t-shared">stack.md</span>                   <span class="t-cm"># Java/Spring versions, deps, DB</span>
+│       ├── <span class="t-shared">patterns.md</span>                <span class="t-cm"># Exception/DTO/logging/test patterns</span>
+│       ├── <span class="t-shared">auth.md</span>                    <span class="t-cm"># Apigee Basic Auth + JWT model</span>
+│       ├── <span class="t-shared">gke.md</span>                     <span class="t-cm"># K8s memory, probes, scaling, secrets</span>
+│       ├── <span class="t-shared">apis.md</span>                    <span class="t-cm"># Endpoint table + data model</span>
+│       ├── <span class="t-shared">deps.md</span>                    <span class="t-cm"># Outbound calls, topics, blast radius</span>
+│       └── <span class="t-shared">tests.md</span>                   <span class="t-cm"># JUnit version, coverage, how-to-test</span>
+├── <span class="t-dir">.github/</span>
+│   ├── <span class="t-copilot">copilot-instructions.md</span>        <span class="t-cm"># Copilot auto-reads (≤80 lines, dense)</span>
+│   └── <span class="t-dir">prompts/</span>                       <span class="t-cm"># Copilot slash commands in VS Code</span>
+│       ├── <span class="t-copilot">new-endpoint.prompt.md</span>     <span class="t-cm"># /new-endpoint</span>
+│       ├── <span class="t-copilot">write-test.prompt.md</span>       <span class="t-cm"># /write-test</span>
+│       ├── <span class="t-copilot">review-change.prompt.md</span>    <span class="t-cm"># /review-change</span>
+│       └── <span class="t-copilot">create-story.prompt.md</span>     <span class="t-cm"># /create-story</span>
+└── <span class="t-dir">CodeFixes/</span>                         <span class="t-cm"># One file per risky/incorrect finding</span>
+    ├── <span class="t-fix">_INDEX.md</span>                      <span class="t-cm"># Summary table, by severity</span>
+    ├── <span class="t-fix">FIX-001-missing-validation.md</span>  <span class="t-cm"># Exact file:line + current + suggested code</span>
+    ├── <span class="t-fix">FIX-002-jvm-heap-oom.md</span>
+    └── <span class="t-fix">FIX-NNN-...md</span>                  <span class="t-cm"># one file per finding</span>
+  </div>
+
+  <div class="g2" style="margin-top:14px">
+    <div class="card">
+      <div class="ch">🟡 Claude Code Side</div>
+      <ul class="bl">
+        <li><code>CLAUDE.md</code> — auto-loaded index pointing to context files</li>
+        <li><code>.claude/context/*.md</code> — 7 small topic files, loaded only when relevant</li>
+        <li><code>.claude/agents/*.md</code> — 3 specialised sub-agents Claude can invoke</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch">🟢 Copilot Side</div>
+      <ul class="bl">
+        <li><code>.github/copilot-instructions.md</code> — auto-loaded for every suggestion</li>
+        <li><code>.github/prompts/*.prompt.md</code> — slash commands (<code>/new-endpoint</code> etc.)</li>
+        <li>Both point at the same <code>.claude/context/</code> files — one source of truth</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL WIRING -->
+<section class="sec p-wire" id="wiring">
+  <div class="sh">
+    <div class="si">🔌</div>
+    <div>
+      <div class="st-h">How Files Wire Into Each Tool's Agent System</div>
+      <div class="ss">AGENTS.md, CLAUDE.md, and copilot-instructions.md all point to the same context</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="fn" style="border-color:#7dca9e;color:#0e6b3a">📁 .claude/context/<br>7 small files<br><span style="font-size:9px;color:#6b82a0">single source of truth</span></div>
+    <div class="fa">←</div>
+    <div class="fn" style="border-color:#fbbf24;color:#b45309">CLAUDE.md<br><span style="font-size:9px">Claude reads</span></div>
+    <div class="fa">·</div>
+    <div class="fn" style="border-color:#c4b5fd;color:#7c3aed">AGENTS.md<br><span style="font-size:9px">both read</span></div>
+    <div class="fa">·</div>
+    <div class="fn" style="border-color:#56d364;color:#0e6b3a">copilot-instructions.md<br><span style="font-size:9px">Copilot reads</span></div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📋 The 3 Entry-Point Files Explained</div>
+    <table>
+      <tr><th>File</th><th>Read By</th><th>When Loaded</th><th>Role</th></tr>
+      <tr><td><code>CLAUDE.md</code></td><td><span class="badge b-claude">Claude Code</span></td><td>Every session, automatic</td><td>Index — points Claude to the 7 context files + 3 sub-agents</td></tr>
+      <tr><td><code>AGENTS.md</code></td><td><span class="badge b-shared">Both + others</span></td><td>Every session, automatic</td><td>Open standard. Build commands + hard rules + pointers to context. Cursor/Windsurf also read it.</td></tr>
+      <tr><td><code>.github/copilot-instructions.md</code></td><td><span class="badge b-copilot">Copilot</span></td><td>Every suggestion, automatic</td><td>Dense ≤80-line rules. Points to same context files.</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">📄 AGENTS.md — The Shared Spec (excerpt)</div>
+    <pre><span style="color:#8b949e"># AGENTS.md — user-service</span>
+<span style="color:#8b949e"># Read by GitHub Copilot, Claude Code, Cursor, and other AI agents</span>
+
+<span style="color:#79c0ff">## Where Context Lives</span> (both Copilot and Claude load these)
+| Topic | File |
+|-------|------|
+| Auth (Apigee + JWT) | .claude/context/auth.md |
+| Code patterns | .claude/context/patterns.md |
+| GKE deployment | .claude/context/gke.md |
+| Pending code fixes | CodeFixes/_INDEX.md |
+
+<span style="color:#79c0ff">## Build &amp; Test</span>
+- Build: mvn clean package
+- Test:  mvn test
+
+<span style="color:#79c0ff">## Hard Rules</span> (both tools follow)
+1. NEVER modify customer-facing APIs without approval
+2. NEVER parse Basic Auth — Apigee handles it
+3. CHECK CodeFixes/ before editing flagged files</pre>
+  </div>
+
+  <div class="alert al-violet">
+    <span class="al-ico">🔗</span>
+    <div><strong>Why this matters:</strong> Because all three entry files point to the same <code>.claude/context/</code> files, Copilot and Claude give the <em>same answers</em> and follow the <em>same rules</em>. Update <code>auth.md</code> once → both tools see the change. No duplicate maintenance.</div>
+  </div>
+</section>
+
+<!-- CODEFIXES -->
+<section class="sec p-fix" id="codefixes">
+  <div class="sh">
+    <div class="si">🔧</div>
+    <div>
+      <div class="st-h">CodeFixes — One File Per Risky Finding</div>
+      <div class="ss">Exact line, signature, current code, suggested code, and why it's safe</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🎯 What Gets a CodeFix File</div>
+    <table>
+      <tr><th>Category</th><th>Examples</th><th>Severity</th></tr>
+      <tr><td><strong>Security</strong></td><td>Missing <code>@Valid</code>, Basic Auth parsed in service, hardcoded secret, PII logged</td><td style="color:var(--fix1)">P1</td></tr>
+      <tr><td><strong>GKE</strong></td><td>JVM heap &gt; 75% of container limit, missing probe, <code>latest</code> tag in prod</td><td style="color:var(--fix1)">P1</td></tr>
+      <tr><td><strong>Reliability</strong></td><td>HTTP call with no timeout, no circuit breaker, unbounded query</td><td style="color:var(--fix2)">P2</td></tr>
+      <tr><td><strong>Correctness</strong></td><td>N+1 query, missing <code>@Transactional</code> on multi-write, swallowed exception</td><td style="color:var(--fix2)">P2</td></tr>
+      <tr><td><strong>Breaking-risk</strong></td><td>Method signature used by 4+ callers, customer API response shape change</td><td style="color:var(--fix3)">P3</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">📄 Example: <code>CodeFixes/FIX-001-missing-validation.md</code></div>
+    <pre><span style="color:#ff7b72"># FIX-001: Missing @Valid on createUser</span>
+<span style="color:#8b949e">> Severity: P1   Category: SECURITY   Generated: 2026-06-02</span>
+
+<span style="color:#79c0ff">## Location</span>
+- File: <span style="color:#a5d6ff">src/main/java/com/co/user/UserController.java</span>
+- Line: 47-52
+- Signature: public ResponseEntity&lt;UserResponse&gt; createUser(@RequestBody UserRequest req)
+
+<span style="color:#79c0ff">## Problem</span>
+@RequestBody is not annotated @Valid — no constraint checking on input.
+
+<span style="color:#79c0ff">## Risk if Unhandled</span>
+Unvalidated input reaches DB layer. Customer-facing endpoint (CustomerA).
+
+<span style="color:#ff7b72">## Current Code</span>
+public ResponseEntity&lt;UserResponse&gt; createUser(@RequestBody UserRequest req) {
+    User saved = userService.create(req);
+    return ResponseEntity.ok(mapper.toResponse(saved));
+}
+
+<span style="color:#56d364">## Suggested Fix</span>
+public ResponseEntity&lt;UserResponse&gt; createUser(@Valid @RequestBody UserRequest req) {
+    User saved = userService.create(req);
+    return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(saved));
+}
+<span style="color:#8b949e">// + add to UserRequest: @NotBlank @Email String email; @NotNull RoleEnum role;</span>
+
+<span style="color:#79c0ff">## Why This Fix Is Safe</span>
+Adds validation only. GlobalExceptionHandler already returns {code,message,
+timestamp} for MethodArgumentNotValidException. No customer contract change.
+
+<span style="color:#79c0ff">## Verification</span>
+- [ ] Existing tests pass (mvn test)
+- [ ] Add test: createUser_blankEmail_returns400</pre>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">📋 <code>CodeFixes/_INDEX.md</code></div>
+      <pre style="font-size:11px"><span style="color:#ff7b72"># CodeFixes Index — user-service</span>
+
+| Severity | Count | Fix in |
+|----------|-------|--------|
+| P1 | 3 | Sprint 0 |
+| P2 | 4 | Sprint 1-2 |
+| P3 | 2 | Backlog |
+
+| ID | Sev | File | Title |
+|----|-----|------|-------|
+| FIX-001 | P1 | UserCtrl:47 | Missing @Valid |
+| FIX-002 | P1 | Dockerfile:12 | JVM OOM risk |
+| FIX-003 | P2 | OrderClient:30 | No timeout |</pre>
+    </div>
+    <div class="card">
+      <div class="ch">📐 CodeFix Rules</div>
+      <ul class="bl">
+        <li><strong>One file per finding</strong> — never combined. Each is reviewable + git-diffable.</li>
+        <li><strong>Real signatures + line numbers</strong> — never approximate.</li>
+        <li><strong>Minimal fix</strong> — fixes only the issue, no refactoring.</li>
+        <li><strong>"Why safe" mandatory</strong> — explains no contract breakage.</li>
+        <li><strong>Never auto-applied</strong> — suggestions only; dev/agent applies deliberately.</li>
+        <li><strong>Cross-linked</strong> — each FIX in <code>_INDEX.md</code>; index in <code>AGENTS.md</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert al-red">
+    <span class="al-ico">🚨</span>
+    <div><strong>Breaking-risk fixes need human approval.</strong> Any FIX file tagged BREAKING-RISK (signature change, customer response shape) must not be applied by an agent autonomously — it requires human sign-off and possibly customer notice. The skill marks these clearly.</div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="sec p-setup" id="install">
+  <div class="sh">
+    <div class="si">📦</div>
+    <div>
+      <div class="st-h">Install the 3 Skills</div>
+      <div class="ss">Claude Code CLI (dev terminal) and Claude.ai Projects (team)</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">💻 Claude Code CLI</div>
+      <ol class="steps">
+        <li><div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--green)">1</div><div class="sc"><strong>Create skills directory</strong><pre style="font-size:11px">mkdir -p ~/.claude/skills</pre></div></li>
+        <li><div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--green)">2</div><div class="sc"><strong>Unzip the 3 .skill files into it</strong><pre style="font-size:11px">cd ~/.claude/skills
+unzip code-archaeology.skill
+unzip story-generator.skill
+unzip repo-qa.skill</pre></div></li>
+        <li><div class="sn" style="background:#dcfce7;border:1px solid #86efac;color:var(--green)">3</div><div class="sc"><strong>Verify</strong><pre style="font-size:11px">claude
+/skills list   <span style="color:#8b949e"># shows all 3</span></pre></div></li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="ch">🌐 Claude.ai Projects (Team)</div>
+      <ol class="steps">
+        <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">1</div><div class="sc"><strong>Create 3 Projects</strong><p>"Code Archaeology", "Story Generator", "Repo QA"</p></div></li>
+        <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">2</div><div class="sc"><strong>Paste each SKILL.md into Custom Instructions</strong><p>Unzip the .skill, open SKILL.md, paste its contents into the project's instructions box.</p></div></li>
+        <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">3</div><div class="sc"><strong>Share with team</strong><p>Project → Share → add members. Everyone gets all 3 skills.</p></div></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="alert al-green">
+    <span class="al-ico">✅</span>
+    <div><strong>Copilot needs no install.</strong> Copilot doesn't use .skill files. Instead, the archaeology skill (run via Claude) writes <code>.github/copilot-instructions.md</code> and <code>.github/prompts/</code> into the repo — Copilot picks these up automatically once they're committed. That's the whole Copilot setup.</div>
+  </div>
+</section>
+
+<!-- RUN PER REPO -->
+<section class="sec p-arch" id="run">
+  <div class="sh">
+    <div class="si">▶️</div>
+    <div>
+      <div class="st-h">Run Per Repo — Step by Step</div>
+      <div class="ss">Same sequence for Spring Boot, React, or shared JAR</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔄 Universal Runbook</div>
+    <ol class="steps">
+      <li><div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:#0e6b3a">1</div><div class="sc"><strong>Open the repo in its own VS Code window + terminal</strong><pre style="font-size:11px">cd /path/to/your/service
+claude</pre></div></li>
+      <li><div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:#0e6b3a">2</div><div class="sc"><strong>Trigger archaeology with context</strong><pre style="font-size:11px">Run code archaeology on this repo.
+Production Spring Boot service on GKE, exposed via Apigee.
+Some endpoints: Basic Auth at Apigee. Others: JWT passthrough.
+Also generate CodeFixes for anything risky or incorrect.</pre></div></li>
+      <li><div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:#0e6b3a">3</div><div class="sc"><strong>Wait for completion (10–20 min)</strong><p>Skill writes all context files, agent files, AGENTS.md, copilot-instructions.md, prompts, and the CodeFixes folder.</p></div></li>
+      <li><div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:#0e6b3a">4</div><div class="sc"><strong>Review CodeFixes/_INDEX.md + auth.md (5 min)</strong><p>Spot-check that P1 findings are real and the auth endpoint map is complete. Edit any markdown directly if needed.</p></div></li>
+      <li><div class="sn" style="background:#e6f4ec;border:1px solid #86c9a0;color:#0e6b3a">5</div><div class="sc"><strong>Commit everything</strong><pre style="font-size:11px">git add CLAUDE.md AGENTS.md .claude/ \
+    .github/copilot-instructions.md .github/prompts/ CodeFixes/
+git commit -m "docs(archaeology): AI context + code fixes [skip ci]"
+git push</pre></div></li>
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">6</div><div class="sc"><strong>Confirm Copilot picked it up</strong><p>Reopen VS Code → Copilot Chat → type <code>/</code> → you should see <code>/new-endpoint</code>, <code>/write-test</code>, <code>/review-change</code>, <code>/create-story</code>.</p></div></li>
+    </ol>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="ch">☕ Spring Boot — extra context</div>
+      <pre style="font-size:10.5px">Apigee proxy: {name}
+CustomerA uses: /api/v1/**
+JWT claims: userId, roles[], sessionId
+JUnit version: 4 or 5
+Test DB: H2 or TestContainers
+Shared tables: {names or none}</pre>
+    </div>
+    <div class="card">
+      <div class="ch">⚛️ React — extra context</div>
+      <pre style="font-size:10.5px">API base URL key: VITE_API_URL
+Token storage: localStorage key
+Roles used in UI: {list}
+Calls Apigee directly: YES/NO
+Build: Vite / CRA / Next.js</pre>
+    </div>
+    <div class="card">
+      <div class="ch">📦 Shared JAR — extra context</div>
+      <pre style="font-size:10.5px">Used by: {service names}
+Current version: {x.y.z}
+Published to: Nexus/Artifactory
+Versioning: semver
+Breaking-change policy: {note}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- VERIFY -->
+<section class="sec p-test" id="verify">
+  <div class="sh">
+    <div class="si">🧪</div>
+    <div>
+      <div class="st-h">Verify Both Tools Are Trained</div>
+      <div class="ss">Test Claude and Copilot separately</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="badge b-claude">Claude Code</span> Verification</div>
+      <table>
+        <tr><th>Ask Claude</th><th>Expected</th></tr>
+        <tr><td>"How does auth work here?"</td><td>Answers from <code>auth.md</code> — Pattern A/B, no guessing</td></tr>
+        <tr><td>"Is it safe to change UserRepository?"</td><td>HIGH/MED/LOW + caller list from <code>deps.md</code></td></tr>
+        <tr><td>"What P1 code fixes exist?"</td><td>Lists from <code>CodeFixes/_INDEX.md</code></td></tr>
+        <tr><td>"Show me FIX-001"</td><td>Reads the fix file with exact code</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="badge b-copilot">Copilot</span> Verification</div>
+      <table>
+        <tr><th>In VS Code</th><th>Expected</th></tr>
+        <tr><td>Type <code>/</code> in Copilot Chat</td><td>Shows 4 custom slash commands</td></tr>
+        <tr><td>Run <code>/new-endpoint</code></td><td>Generates code matching your patterns + auth model</td></tr>
+        <tr><td>Start typing a controller method</td><td>Suggestions follow <code>copilot-instructions.md</code> rules</td></tr>
+        <tr><td>Run <code>/review-change</code> on a diff</td><td>Flags violations of your service's standards</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="alert al-green">
+    <span class="al-ico">✅</span>
+    <div><strong>Gold standard:</strong> A developer new to the codebase gets accurate, specific answers from <em>either</em> tool — and Copilot's code suggestions follow your exact patterns — without opening a single source file. Both tools share one brain via the context files.</div>
+  </div>
+</section>
+
+<!-- STORIES & QA -->
+<section class="sec p-story" id="stories">
+  <div class="sh">
+    <div class="si">📝</div>
+    <div>
+      <div class="st-h">Skills 2 &amp; 3 — Stories and Repo QA</div>
+      <div class="ss">Both read the same small context files</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">📝 story-generator</div>
+      <p style="font-size:13px;color:var(--tm);margin-bottom:10px">Reads <code>apis.md</code>, <code>deps.md</code>, <code>auth.md</code>, <code>tests.md</code>, <code>gke.md</code> → generates:</p>
+      <ul class="bl">
+        <li><strong>Type A</strong> — reverse stories from existing endpoints (regression baseline)</li>
+        <li><strong>Type B</strong> — gap stories: P1 (security/GKE/failing tests), P2 (coverage/reliability), P3 (upgrades)</li>
+        <li>Pulls directly from <code>CodeFixes/</code> for P1/P2 gap stories</li>
+      </ul>
+      <pre style="font-size:10.5px;margin-top:10px">"Generate stories for this service from the docs.
+Epic: [paste epic]"</pre>
+    </div>
+    <div class="card">
+      <div class="ch">💬 repo-qa</div>
+      <p style="font-size:13px;color:var(--tm);margin-bottom:10px">Loads only the file matching the question — minimum tokens:</p>
+      <table>
+        <tr><th>Question</th><th>Loads</th></tr>
+        <tr><td>Auth?</td><td><code>auth.md</code></td></tr>
+        <tr><td>Endpoints?</td><td><code>apis.md</code></td></tr>
+        <tr><td>Safe to change X?</td><td><code>deps.md</code>+<code>auth.md</code></td></tr>
+        <tr><td>How to test?</td><td><code>tests.md</code></td></tr>
+        <tr><td>GKE broken?</td><td><code>gke.md</code></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- CHEATSHEET -->
+<section class="sec" id="cheatsheet">
+  <div class="sh">
+    <div class="si" style="background:linear-gradient(135deg,#e8f4ff,#d0e8ff);border:1px solid #93c5e8">📋</div>
+    <div>
+      <div class="st-h">Cheatsheet</div>
+      <div class="ss">One page for daily use</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📁 What Each File Is For</div>
+    <table>
+      <tr><th>File</th><th>Tool</th><th>Purpose</th></tr>
+      <tr><td><code>CLAUDE.md</code></td><td>Claude</td><td>Index → context files (auto-loaded)</td></tr>
+      <tr><td><code>AGENTS.md</code></td><td>Both</td><td>Shared rules + build commands + pointers</td></tr>
+      <tr><td><code>.claude/context/*.md</code></td><td>Both</td><td>7 topic files, loaded on demand</td></tr>
+      <tr><td><code>.claude/agents/*.md</code></td><td>Claude</td><td>3 sub-agents (archaeologist, reviewer, story-helper)</td></tr>
+      <tr><td><code>.github/copilot-instructions.md</code></td><td>Copilot</td><td>Dense ≤80-line rules (auto-loaded)</td></tr>
+      <tr><td><code>.github/prompts/*.prompt.md</code></td><td>Copilot</td><td>Slash commands in VS Code</td></tr>
+      <tr><td><code>CodeFixes/*.md</code></td><td>Both</td><td>One file per finding, exact code + fix</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔄 When to Regenerate</div>
+    <table>
+      <tr><th>Change</th><th>Regenerate</th><th>Command</th></tr>
+      <tr><td>New endpoints</td><td><code>apis.md</code>, <code>auth.md</code></td><td>"update docs after merge"</td></tr>
+      <tr><td>New dependencies</td><td><code>deps.md</code></td><td>"update dependency map"</td></tr>
+      <tr><td>K8s changes</td><td><code>gke.md</code></td><td>"refresh GKE readiness"</td></tr>
+      <tr><td>New issues found</td><td><code>CodeFixes/</code></td><td>"refresh code fixes"</td></tr>
+      <tr><td>Major refactor</td><td>Everything</td><td>"run full code archaeology"</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ch">📊 Multi-Service Priority</div>
+    <table>
+      <tr><th>Order</th><th>Service Type</th><th>Why</th></tr>
+      <tr><td>1st</td><td>Customer-facing (Apigee-fronted)</td><td>Highest risk; auth + CodeFixes most critical</td></tr>
+      <tr><td>2nd</td><td>Downstream services</td><td>Completes dependency graph</td></tr>
+      <tr><td>3rd</td><td>React UI</td><td>Reveals API mismatches</td></tr>
+      <tr><td>4th</td><td>Internal-only services</td><td>Lower risk</td></tr>
+      <tr><td>5th</td><td>Shared JARs</td><td>Change rarely; version contract matters</td></tr>
+    </table>
+  </div>
+</section>
+
+<hr>
+<div class="final">
+  <div class="ft">📍 Start Now</div>
+  <pre># 1. Install Claude Code + the 3 skills
+npm install -g @anthropic-ai/claude-code && claude login
+mkdir -p ~/.claude/skills && cd ~/.claude/skills
+unzip code-archaeology.skill && unzip story-generator.skill && unzip repo-qa.skill
+
+# 2. Go to your most critical (customer-facing) service
+cd /path/to/user-service && claude
+
+# 3. Run archaeology — generates ALL files for BOTH tools + CodeFixes
+#    "Run code archaeology on this repo. Spring Boot on GKE via Apigee.
+#     Some endpoints Basic Auth at Apigee, others JWT passthrough.
+#     Also generate CodeFixes for risky or incorrect code."
+
+# 4. Commit
+git add CLAUDE.md AGENTS.md .claude/ .github/copilot-instructions.md \
+        .github/prompts/ CodeFixes/
+git commit -m "docs(archaeology): AI context + code fixes"
+
+# 5. Verify both tools
+#    Claude:  "how does auth work?" / "show me FIX-001"
+#    Copilot: open VS Code Chat, type / → see slash commands</pre>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px;text-align:center">
+    <div><div style="font-family:'Syne';font-size:26px;font-weight:800;color:#79c0ff">17+</div><div style="font-size:10px;color:#7a93b5">small files / repo</div></div>
+    <div><div style="font-family:'Syne';font-size:26px;font-weight:800;color:#fbbf24">2</div><div style="font-size:10px;color:#7a93b5">tools, one brain</div></div>
+    <div><div style="font-family:'Syne';font-size:26px;font-weight:800;color:#ff7b72">1</div><div style="font-size:10px;color:#7a93b5">fix per file</div></div>
+    <div><div style="font-family:'Syne';font-size:26px;font-weight:800;color:#c4b5fd">&lt;80</div><div style="font-size:10px;color:#7a93b5">lines per file</div></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
