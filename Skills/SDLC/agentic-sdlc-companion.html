@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code to Cloud, Autonomously — Agentic SDLC</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f9fc;--white:#fff;--s2:#eef1f8;--s3:#e4e9f4;--bd:#cdd5e8;
+    --navy:#0A2342;--blue:#1565C0;--teal:#00838F;--green:#2E7D32;
+    --orange:#E65100;--red:#C62828;--purple:#4527A0;--amber:#FF8F00;
+    --g1:#1A2640;--g2:#3D5170;--g3:#6B7F9E;--g4:#9EB3C8;--g5:#D4E0EC;
+    --sh:0 1px 4px rgba(0,40,100,.08),0 4px 16px rgba(0,40,100,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--g1);font-family:'Inter',sans-serif;font-size:14px;line-height:1.75}
+  .hero{padding:52px 44px 44px;background:linear-gradient(150deg,var(--navy) 0%,#133056 55%,var(--navy) 100%);position:relative;overflow:hidden;border-bottom:3px solid var(--blue)}
+  .hero::before{content:'';position:absolute;top:-80px;right:-80px;width:480px;height:480px;background:radial-gradient(circle,rgba(21,101,192,.1) 0%,transparent 65%)}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:#79c0ff;letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+  .eyebrow::before{content:'';width:28px;height:1px;background:#79c0ff}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(26px,4vw,42px);font-weight:800;line-height:1.1;margin-bottom:10px;color:#fff;position:relative;z-index:1}
+  .hero h1 .a{color:#4DD0E1}.hero h1 .b{color:#FFA726}
+  .tagline{font-family:'Syne',sans-serif;font-size:17px;font-style:italic;color:#e2eeff;margin-bottom:14px;position:relative;z-index:1;letter-spacing:0.02em}
+  .hero p{color:#9bb0cc;font-size:15px;max-width:700px;margin-bottom:20px;position:relative;z-index:1}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.76);background:rgba(255,255,255,.07)}
+  .nav{background:#fff;border-bottom:2px solid var(--bd);padding:0 44px;display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,40,100,.07)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{padding:13px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g3);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s;margin-bottom:-2px}
+  .nav a:hover{color:var(--blue);border-bottom-color:var(--blue)}
+  .wrap{max-width:1100px;margin:0 auto;padding:44px 44px 100px}
+  .sec{margin-bottom:52px;scroll-margin-top:60px}
+  .sh{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px}
+  .si{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:var(--sh)}
+  .st{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;color:var(--g1)}
+  .ss{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g3);margin-top:3px}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:22px;margin-bottom:14px;box-shadow:var(--sh)}
+  .ch{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--g1);margin-bottom:11px;display:flex;align-items:center;gap:8px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .pcard{border-radius:14px;padding:22px;border:1px solid;margin-bottom:14px;box-shadow:var(--sh)}
+  .p1c{background:#EFF6FF;border-color:#BFDBFE}
+  .p2c{background:#F0FDFA;border-color:#99F6E4}
+  .p3c{background:#FFF7ED;border-color:#FED7AA}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 13px;background:var(--s2);color:var(--g3);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:left;border-bottom:2px solid var(--bd)}
+  td{padding:10px 13px;border-bottom:1px solid var(--s3);vertical-align:top;color:var(--g2)}
+  td strong{color:var(--g1)}td code{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(21,101,192,.08);border:1px solid rgba(21,101,192,.18);border-radius:4px;padding:1px 5px;color:var(--blue)}
+  tr:last-child td{border-bottom:none}tr:hover td{background:var(--s2)}
+  .alert{border-radius:10px;padding:13px 17px;margin:14px 0;font-size:13px;display:flex;gap:11px;align-items:flex-start}
+  .al-b{background:#DBEAFE;border:1px solid #93C5FD;color:#1E3A8A}
+  .al-g{background:#DCFCE7;border:1px solid #86EFAC;color:#14532D}
+  .al-a{background:#FFF7ED;border:1px solid #FED7AA;color:#7C2D12}
+  .al-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+  .alert strong{font-weight:600}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--s2);border-radius:10px;padding:14px 18px;border:1px solid var(--bd);margin:10px 0}
+  .fn{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:6px 13px;font-size:12px;color:var(--g1);font-family:'JetBrains Mono',monospace;box-shadow:var(--sh);text-align:center}
+  .fa{color:var(--g4);font-size:14px;font-weight:700}
+  ul.bl{padding-left:18px}
+  ul.bl li{margin-bottom:6px;color:var(--g2);font-size:13px}
+  ul.bl li strong{color:var(--g1)}
+  .steps{list-style:none}
+  .step{display:flex;gap:13px;padding:11px 0;border-bottom:1px solid var(--s3)}
+  .step:last-child{border-bottom:none}
+  .sn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+  .sc strong{display:block;color:var(--g1);margin-bottom:2px;font-size:13px;font-weight:600}
+  .sc p{color:var(--g2);font-size:12.5px}
+  .metric{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:18px;box-shadow:var(--sh);text-align:center}
+  .metric .big{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;margin-bottom:2px}
+  .metric .lbl{font-size:11px;color:var(--g3);font-family:'JetBrains Mono',monospace}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 9px;border-radius:20px;border:1px solid;display:inline-block;margin:2px}
+  .tool-badge{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 10px;border-radius:6px;margin:2px}
+  .tb-cop{background:rgba(46,125,50,.1);border:1px solid rgba(46,125,50,.3);color:#2E7D32}
+  .tb-cla{background:rgba(213,119,6,.1);border:1px solid rgba(213,119,6,.3);color:#B35900}
+  .tb-both{background:rgba(21,101,192,.1);border:1px solid rgba(21,101,192,.3);color:#1565C0}
+  hr{border:none;border-top:1px solid var(--bd);margin:34px 0}
+  .final{background:linear-gradient(135deg,var(--navy),#133056);border-radius:14px;padding:28px;color:#fff;margin-top:8px;border:1px solid #1D4B7C}
+  .final pre{background:#06101e;border:1px solid #1e3050;border-radius:8px;padding:16px 18px;color:#a8c8e8;font-family:'JetBrains Mono',monospace;font-size:12px;overflow-x:auto}
+  .final .ft{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;color:#fff}
+  .final .fs{font-family:'Syne',sans-serif;font-size:13px;font-style:italic;color:#79c0ff;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="eyebrow">A Personal Deep-Dive into Agentic Engineering</div>
+  <h1>Code to <span class="a">Cloud</span>,<br><span class="b">Autonomously.</span></h1>
+  <div class="tagline">Designed by Curiosity. Built by Discipline. Delivered by Nirav Mehta.</div>
+  <p>How AI Agents transform the entire SDLC — from Epic to Deployment, manually and at scale. Three phases, measurable impact, compatible with both GitHub Copilot and Claude Code.</p>
+  <div class="chips">
+    <span class="chip">Phase 1: Manual SDLC</span>
+    <span class="chip">Phase 2: Queen Agent Orchestra</span>
+    <span class="chip">Phase 3: Legacy Intelligence</span>
+    <span class="chip">✦ Copilot Compatible</span>
+    <span class="chip">✦ Claude Code Compatible</span>
+  </div>
+</div>
+<nav class="nav">
+  <a href="#problem">Problem</a>
+  <a href="#phases">3 Phases</a>
+  <a href="#phase1">Phase 1</a>
+  <a href="#phase2">Phase 2</a>
+  <a href="#phase3">Phase 3</a>
+  <a href="#spike">Spike → Story</a>
+  <a href="#repoqa">Repo QA</a>
+  <a href="#files">Files</a>
+  <a href="#benefits">Benefits</a>
+  <a href="#next">Next Steps</a>
+</nav>
+<div class="wrap">
+
+<section class="sec" id="problem">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#fee2e2,#fecaca);border:1px solid #fca5a5">🔴</div>
+    <div><div class="st">Why Our SDLC Needs to Evolve</div><div class="ss">Six pain points every developer on the team recognises</div></div></div>
+  <div class="g3">
+    <div class="card"><div class="ch">⏱ Spike Before Every Story</div><p style="font-size:13px;color:var(--g2)">1–3 days reading legacy code before writing a story. Multiply by 15+ services and 4 sprints a year.</p></div>
+    <div class="card"><div class="ch">📄 Zero Documentation</div><p style="font-size:13px;color:var(--g2)">5–8 year-old microservices with no docs, no architecture records. Every new developer starts from zero.</p></div>
+    <div class="card"><div class="ch">🔁 Manual Every Step</div><p style="font-size:13px;color:var(--g2)">Epic → Stories → Design → Code → Tests → Deploy. Each handoff is a context switch, a meeting, a delay.</p></div>
+    <div class="card"><div class="ch">❌ No Contract Safety</div><p style="font-size:13px;color:var(--g2)">Customer APIs break silently. No automated contract tests. A routine refactor becomes a production incident.</p></div>
+    <div class="card"><div class="ch">🔍 Questions Slow Work</div><p style="font-size:13px;color:var(--g2)">"Who owns this table?" "Is it safe to change this?" — each question costs hours before work can begin.</p></div>
+    <div class="card"><div class="ch">🚀 Deployment Anxiety</div><p style="font-size:13px;color:var(--g2)">No deployment plan, no rollback playbook, no smoke test automation. Every GKE deploy is a manual risk.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="phases">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#dbeafe,#c2d8f5);border:1px solid #7eb4e8">🗺</div>
+    <div><div class="st">Three Phases — One Journey to Autonomous SDLC</div><div class="ss">Start with full control. Grow into full autonomy. Each phase is independently valuable.</div></div></div>
+  <div class="g3">
+    <div class="pcard p1c">
+      <h3 style="font-family:'Syne',sans-serif;font-size:16px;color:var(--blue);margin-bottom:8px">Phase 1 — Manual SDLC</h3>
+      <p style="font-size:13px;color:var(--g2);margin-bottom:10px">Every agent runs when YOU prompt it. Epic → Story → Architect → Planner → Dev → Test → DevOps.</p>
+      <ul class="bl"><li>Jira Epic → Story Agent → Architect Agent</li><li>Planner Agent → Dev Agent → Test Agent</li><li>DevOps Agent → GKE Deploy</li></ul>
+      <div style="margin-top:10px"><span class="tool-badge tb-cop">Copilot</span><span class="tool-badge tb-cla">Claude</span><span class="tag" style="color:var(--blue);border-color:rgba(21,101,192,.3)">Low Risk · Full Control</span></div>
+    </div>
+    <div class="pcard p2c">
+      <h3 style="font-family:'Syne',sans-serif;font-size:16px;color:var(--teal);margin-bottom:8px">Phase 2 — Queen Orchestration</h3>
+      <p style="font-size:13px;color:var(--g2);margin-bottom:10px">Queen auto-orchestrates all phases. You approve at 3 gates only.</p>
+      <ul class="bl"><li>Epic → Stories → Code → Tests → GKE</li><li>Auto token optimisation</li><li>Full audit trail</li></ul>
+      <div style="margin-top:10px"><span class="tool-badge tb-both">Copilot Agent + Claude</span><span class="tag" style="color:var(--teal);border-color:rgba(0,131,143,.3)">High Speed · Human Gates</span></div>
+    </div>
+    <div class="pcard p3c">
+      <h3 style="font-family:'Syne',sans-serif;font-size:16px;color:var(--orange);margin-bottom:8px">Phase 3 — Legacy Intelligence</h3>
+      <p style="font-size:13px;color:var(--g2);margin-bottom:10px">Scan, understand, document, generate stories, find bugs — before touching a line.</p>
+      <ul class="bl"><li>Code Archaeology + Story Generator</li><li>Repo QA Agent (ask your code)</li><li>CodeFixes per finding</li></ul>
+      <div style="margin-top:10px"><span class="tool-badge tb-both">Copilot + Claude</span><span class="tag" style="color:var(--orange);border-color:rgba(230,81,0,.3)">Legacy-Safe · No Spike Story</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="phase1">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#dbeafe,#c2d8f5);border:1px solid #7eb4e8">📋</div>
+    <div><div class="st">Phase 1 — Manual SDLC Agent Chain</div><div class="ss">Epic to GKE, one agent at a time. You trigger each step. Works in Copilot and Claude.</div></div></div>
+  <div class="flow">
+    <div class="fn">📋 Jira Epic<br><span style="font-size:9px;color:var(--g3)">Input</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#1565C0;color:#1565C0">📝 Story Agent<br><span style="font-size:9px">PO Role</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#4527A0;color:#4527A0">🏛 Architect Agent<br><span style="font-size:9px">Design</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#00838F;color:#00838F">📅 Planner Agent<br><span style="font-size:9px">Sprint Plan</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#E65100;color:#E65100">💻 Dev Agent<br><span style="font-size:9px">Implement</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#2E7D32;color:#2E7D32">🧪 Test Agent<br><span style="font-size:9px">QA</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#C62828;color:#C62828">🚀 DevOps Agent<br><span style="font-size:9px">GKE Deploy</span></div>
+  </div>
+  <div class="card">
+    <table>
+      <tr><th>Agent</th><th>What It Does</th><th>Copilot</th><th>Claude</th></tr>
+      <tr><td><strong style="color:var(--blue)">Story Agent</strong></td><td>Stories with Fibonacci estimates, acceptance criteria, risk levels, auth labels (JWT/Basic Auth via Apigee/Public)</td><td><code>/create-story</code></td><td>story-helper agent</td></tr>
+      <tr><td><strong style="color:var(--purple)">Architect Agent</strong></td><td>Service boundaries, API contracts (OpenAPI), data models, Apigee impact, GKE resource changes</td><td>@workspace + context</td><td>.claude/context/apis.md</td></tr>
+      <tr><td><strong style="color:var(--teal)">Planner Agent</strong></td><td>Sprint breakdown, dependency ordering, parallel tracks (backend vs frontend), definition of done</td><td><code>/create-story</code></td><td>story-helper.md</td></tr>
+      <tr><td><strong style="color:var(--orange)">Dev Agent</strong></td><td>Code + PRs. Reads CodeFixes/ for known issues. Runs mvn test after each story. Retries 3x on failure.</td><td>Inline suggestions</td><td>Claude Code (primary)</td></tr>
+      <tr><td><strong style="color:var(--green)">Test Agent</strong></td><td>JUnit tests (matching your version), @WebMvcTest with Apigee headers, Playwright E2E (UI + API + Customer contracts)</td><td>tests.md context</td><td>tests.md context</td></tr>
+      <tr><td><strong style="color:var(--red)">DevOps Agent → GKE</strong></td><td>Dockerfile, K8s manifests, GitHub Actions CI/CD, GKE_READINESS checklist, blue-green + smoke tests</td><td><code>/review-change</code></td><td>gke.md context</td></tr>
+    </table>
+  </div>
+  <div class="g2">
+    <div class="card" style="background:#F0FDF4;border-color:#86EFAC"><div class="ch" style="color:var(--green)">✅ Benefits</div>
+      <ul class="bl"><li>Full human control at every step</li><li>Easy to correct if agent misunderstands</li><li>Your choice — Copilot or Claude or both</li><li>Works with existing Jira and GitHub processes</li><li>Great for onboarding — reasoning is visible</li></ul></div>
+    <div class="card" style="background:#FFF7ED;border-color:#FED7AA"><div class="ch" style="color:var(--orange)">⚠️ Constraints</div>
+      <ul class="bl"><li>Requires human to trigger each step manually</li><li>Context can be lost between sessions</li><li>Missed steps mean incomplete output</li><li>No token optimisation across phases</li><li><strong>Phase 2 solves all of these</strong></li></ul></div>
+  </div>
+</section>
+
+<section class="sec" id="phase2">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#e0f2f1,#b2dfdb);border:1px solid #4DB6AC">👑</div>
+    <div><div class="st">Phase 2 — Queen Agent Orchestration</div><div class="ss">You provide the Epic. Queen handles every phase. 3 approvals, ~30 minutes of your time.</div></div></div>
+  <div class="flow">
+    <div class="fn">Epic<br><span style="font-size:9px;color:var(--g3)">You provide</span></div><div class="fa">→</div>
+    <div class="fn">Story Gen<br><span style="font-size:9px;color:var(--g3)">Auto</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#FF8F00;color:#FF8F00"><strong>GATE 1</strong><br><span style="font-size:9px">You approve</span></div><div class="fa">→</div>
+    <div class="fn">Architect<br><span style="font-size:9px;color:var(--g3)">Auto</span></div><div class="fa">→</div>
+    <div class="fn">Planner<br><span style="font-size:9px;color:var(--g3)">Auto</span></div><div class="fa">→</div>
+    <div class="fn">Dev + Tests<br><span style="font-size:9px;color:var(--g3)">Auto</span></div><div class="fa">→</div>
+    <div class="fn" style="border-color:#FF8F00;color:#FF8F00"><strong>GATE 2</strong><br><span style="font-size:9px">Deploy?</span></div><div class="fa">→</div>
+    <div class="fn">GKE<br><span style="font-size:9px;color:var(--g3)">Auto</span></div>
+  </div>
+  <div class="g3">
+    <div class="card"><div class="ch">🧠 Reasons Between Phases</div><p style="font-size:13px;color:var(--g2)">Reads previous agent output before starting next. Consistent context, no dropped information.</p></div>
+    <div class="card"><div class="ch">🪙 Token Optimisation</div><p style="font-size:13px;color:var(--g2)">Loads only the context files each phase needs. 10x fewer tokens vs re-reading source code.</p></div>
+    <div class="card"><div class="ch">🔒 3 Human Gates Only</div><p style="font-size:13px;color:var(--g2)">Story approval, architecture approval, deploy approval. Everything else runs unattended.</p></div>
+  </div>
+  <div class="alert al-g"><span class="al-ico">✅</span><div><strong>Result:</strong> Epic → Deployed app in ~3–4 hours. Your involvement: 3 approvals, ~30 minutes. Works in Copilot Agent mode or Claude Code.</div></div>
+</section>
+
+<section class="sec" id="phase3">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097">🔍</div>
+    <div><div class="st">Phase 3 — Four Agents for Legacy Code</div><div class="ss">Eliminates the spike story entirely. Scan → Document → Ask → Fix → Generate Stories. All in one session.</div></div></div>
+  <div class="alert al-a"><span class="al-ico">⚠️</span><div><strong>The Reality:</strong> Legacy services have years of tribal knowledge locked in undocumented Java. Phase 3 gives you institutional memory before any change — and eliminates spike stories entirely.</div></div>
+  <div class="g2">
+    <div class="card"><div class="ch" style="color:var(--orange)">🔍 Code Archaeology <span class="tool-badge tb-both">Copilot + Claude</span></div>
+      <p style="font-size:12.5px;color:var(--g2);margin-bottom:10px">Scans the entire repo. Writes 17+ small focused files — one concern per file, under 80 lines. Works in Copilot Chat (@workspace) and Claude Code.</p>
+      <ul class="bl" style="font-size:12px"><li>SERVICE_PROFILE.md — what this service is</li><li>auth.md — Apigee + JWT model</li><li>gke.md — K8s config snapshot</li><li>deps.md — inter-service blast radius</li><li>tests.md — JUnit version, coverage state</li></ul></div>
+    <div class="card"><div class="ch" style="color:var(--blue)">📝 Story Generator <span class="tool-badge tb-both" style="font-size:10px">Eliminates Spike Stories</span></div>
+      <p style="font-size:12.5px;color:var(--g2);margin-bottom:10px">Reads archaeology docs and generates stories directly from CODE — no spike story needed. Type A (existing) + Type B (gaps). Run from Copilot /create-story or Claude story-helper.</p>
+      <ul class="bl" style="font-size:12px"><li>Type A: existing endpoints → stories</li><li>Type B: P1 security gaps, P2 coverage</li><li>Fibonacci estimates from code complexity</li><li>Jira-ready with auth labels + risk level</li></ul></div>
+    <div class="card"><div class="ch" style="color:var(--purple)">💬 Repo QA Agent <span class="tool-badge tb-both">In Your IDE</span></div>
+      <p style="font-size:12.5px;color:var(--g2);margin-bottom:10px">Answers any question from context docs — no re-scanning. Ask from Copilot Chat or Claude. Inside your IDE. Your code never leaves your workspace.</p>
+      <ul class="bl" style="font-size:12px"><li>'Is it safe to change X?' → risk level</li><li>'How does auth work?' → Pattern A/B</li><li>'How do I write a test?' → JUnit pattern</li><li>'Story points for X?' → estimate</li></ul></div>
+    <div class="card"><div class="ch" style="color:var(--red)">🔧 CodeFixes Folder <span class="tool-badge tb-both">Exact Line + Code</span></div>
+      <p style="font-size:12.5px;color:var(--g2);margin-bottom:10px">One file per risky finding. Exact file path, line number, current code block, suggested replacement, and why it's safe. Never auto-applies — developer reviews each.</p>
+      <ul class="bl" style="font-size:12px"><li>FIX-001: Missing @Valid (P1 Security)</li><li>FIX-002: JVM OOM risk (P1 GKE)</li><li>FIX-003: No HTTP timeout (P2)</li><li>_INDEX.md: all findings by severity</li></ul></div>
+  </div>
+</section>
+
+<section class="sec" id="spike">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097">⚡</div>
+    <div><div class="st">Spike Story Elimination — Before vs After</div><div class="ss">The workflow your team runs today — replaced entirely</div></div></div>
+  <div class="g2">
+    <div class="card" style="background:#FFF1F2;border-color:#FECDD3"><div class="ch" style="color:var(--red)">Before — Manual Spike (2–3 days)</div>
+      <ul class="bl"><li>Dev assigned spike story</li><li>2 days reading 50k lines of code</li><li>Ask 3 engineers for context</li><li>Write rough Confluence notes</li><li>PO writes stories from the notes</li><li>Stories miss edge cases + auth risks</li><li>Sprint estimate is a guess</li><li><strong style="color:var(--red)">Total: 2–3 days, still incomplete</strong></li></ul></div>
+    <div class="card" style="background:#F0FDF4;border-color:#BBF7D0"><div class="ch" style="color:var(--green)">After — Code Archaeology + Story Generator (30 min)</div>
+      <ul class="bl"><li>Open service in VS Code or terminal</li><li>Run Code Archaeology (15 min, read-only)</li><li>17+ context files written for both tools</li><li>Ask Repo QA: 'what does this service do?'</li><li>Run Story Generator: stories from docs</li><li>Stories include auth model, risk, estimates</li><li>Jira-ready with Type A + Type B split</li><li><strong style="color:var(--green)">Total: 30 min, production-accurate</strong></li></ul></div>
+  </div>
+  <div class="alert al-b"><span class="al-ico">💡</span><div><strong>Time saved per sprint:</strong> ~2 days per service → ~40 dev-days saved per year for a 10-service team.</div></div>
+</section>
+
+<section class="sec" id="repoqa">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#ede9fe,#ddd0f8);border:1px solid #b89de8">💬</div>
+    <div><div class="st">Repo QA Agent vs Google NotebookLM</div><div class="ss">Repo QA lives in your IDE and reads your actual code — NotebookLM cannot access Git repos</div></div></div>
+  <div class="card"><table>
+    <tr><th>Feature</th><th>Repo QA Agent (Copilot + Claude)</th><th>Google NotebookLM</th></tr>
+    <tr><td><strong>Where it lives</strong></td><td style="color:var(--green)">In your IDE — same workspace</td><td>External browser tab</td></tr>
+    <tr><td><strong>Code repository access</strong></td><td style="color:var(--green)">Direct — reads your actual files</td><td style="color:var(--red)">Cannot upload Git repos</td></tr>
+    <tr><td><strong>Auth model awareness</strong></td><td style="color:var(--green)">Knows your Apigee + JWT patterns</td><td>Generic — no context</td></tr>
+    <tr><td><strong>Answer accuracy</strong></td><td style="color:var(--green)">From scanned code (accurate)</td><td>From uploaded docs only</td></tr>
+    <tr><td><strong>Tool compatibility</strong></td><td style="color:var(--green)">GitHub Copilot + Claude Code</td><td>No IDE integration</td></tr>
+    <tr><td><strong>Update on code change</strong></td><td style="color:var(--green)">Re-run archaeology → docs update</td><td>Manual re-upload every time</td></tr>
+    <tr><td><strong>Privacy</strong></td><td style="color:var(--green)">Never leaves your environment</td><td>Data goes to Google servers</td></tr>
+  </table></div>
+</section>
+
+<section class="sec" id="files">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#dbeafe,#c2d8f5);border:1px solid #7eb4e8">📂</div>
+    <div><div class="st">One Scan. Both Tools Trained.</div><div class="ss">Archaeology writes into both tools' native agent locations — one source of truth, zero duplicate maintenance</div></div></div>
+  <div class="card"><table>
+    <tr><th>File</th><th>Read By</th><th>Role</th></tr>
+    <tr><td><code>CLAUDE.md</code></td><td><span class="tool-badge tb-cla">Claude Code auto</span></td><td>Index → 7 context files + 3 sub-agents</td></tr>
+    <tr><td><code>AGENTS.md</code></td><td><span class="tool-badge tb-both">Both + others</span></td><td>Shared open standard — build commands, hard rules, pointers</td></tr>
+    <tr><td><code>.github/copilot-instructions.md</code></td><td><span class="tool-badge tb-cop">Copilot auto</span></td><td>Dense ≤80-line rules, auto-loaded for every suggestion</td></tr>
+    <tr><td><code>.claude/context/*.md</code></td><td><span class="tool-badge tb-both">Both on demand</span></td><td>7 files: stack, patterns, auth, gke, apis, deps, tests</td></tr>
+    <tr><td><code>.claude/agents/*.md</code></td><td><span class="tool-badge tb-cla">Claude Code</span></td><td>3 sub-agents: archaeologist, reviewer, story-helper</td></tr>
+    <tr><td><code>.github/prompts/*.prompt.md</code></td><td><span class="tool-badge tb-cop">Copilot</span></td><td>/new-endpoint  /write-test  /review-change  /create-story</td></tr>
+    <tr><td><code>CodeFixes/*.md</code></td><td><span class="tool-badge tb-both">Both</span></td><td>One file per finding: exact path, line, current code, fix</td></tr>
+  </table></div>
+</section>
+
+<section class="sec" id="benefits">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #7dca9e">📊</div>
+    <div><div class="st">Concrete, Measurable Impact</div><div class="ss">Numbers that compound over time</div></div></div>
+  <div class="g3">
+    <div class="metric"><div class="big" style="color:var(--blue)">~95%</div><div class="lbl">Spike time saved<br>2–3 days → 30 min</div></div>
+    <div class="metric"><div class="big" style="color:var(--teal)">~90%</div><div class="lbl">Epic to first code<br>3 weeks → 4–8 hours</div></div>
+    <div class="metric"><div class="big" style="color:var(--green)">+60pt</div><div class="lbl">Test coverage start<br>0% → 60%+ generated</div></div>
+    <div class="metric"><div class="big" style="color:var(--purple)">1hr</div><div class="lbl">New dev onboarding<br>vs 2 weeks manual</div></div>
+    <div class="metric"><div class="big" style="color:var(--orange)">3</div><div class="lbl">Human gates only<br>everything else auto</div></div>
+    <div class="metric"><div class="big" style="color:var(--red)">Zero</div><div class="lbl">Customer API breakage<br>contract tests gate deploys</div></div>
+  </div>
+</section>
+
+<section class="sec" id="next">
+  <div class="sh"><div class="si" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #7dca9e">🚀</div>
+    <div><div class="st">Start This Week — 3 Actions</div><div class="ss">No new licences beyond what you already have</div></div></div>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid var(--blue)"><div class="ch" style="color:var(--blue)">1 — This Week</div>
+      <p style="font-size:12px;color:var(--g2);font-weight:600;margin-bottom:10px">Code Archaeology on One Service</p>
+      <ol class="steps">
+        <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">1</div><div class="sc"><strong>Install Claude Code</strong><p>npm install -g @anthropic-ai/claude-code</p></div></li>
+        <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">2</div><div class="sc"><strong>Open critical service in VS Code</strong><p>One service = one workspace window</p></div></li>
+        <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--blue)">3</div><div class="sc"><strong>"Scan this repo"</strong><p>Both Copilot + Claude trained in 30 min</p></div></li>
+      </ol></div>
+    <div class="card" style="border-top:3px solid var(--teal)"><div class="ch" style="color:var(--teal)">2 — This Sprint</div>
+      <p style="font-size:12px;color:var(--g2);font-weight:600;margin-bottom:10px">Generate Stories from Code</p>
+      <ol class="steps">
+        <li><div class="sn" style="background:#e0f2f1;border:1px solid #4DB6AC;color:var(--teal)">1</div><div class="sc"><strong>Paste your next Epic</strong><p>Into Story Generator skill</p></div></li>
+        <li><div class="sn" style="background:#e0f2f1;border:1px solid #4DB6AC;color:var(--teal)">2</div><div class="sc"><strong>Get Type A + B stories</strong><p>With Fibonacci estimates + auth labels</p></div></li>
+        <li><div class="sn" style="background:#e0f2f1;border:1px solid #4DB6AC;color:var(--teal)">3</div><div class="sc"><strong>Create Jira tickets</strong><p>Stories in under 1 hour</p></div></li>
+      </ol></div>
+    <div class="card" style="border-top:3px solid var(--orange)"><div class="ch" style="color:var(--orange)">3 — This Quarter</div>
+      <p style="font-size:12px;color:var(--g2);font-weight:600;margin-bottom:10px">Queen Agent on New Features</p>
+      <ol class="steps">
+        <li><div class="sn" style="background:#fff3e8;border:1px solid #FED7AA;color:var(--orange)">1</div><div class="sc"><strong>Archaeology on all services</strong><p>Full knowledge base in ~2 days</p></div></li>
+        <li><div class="sn" style="background:#fff3e8;border:1px solid #FED7AA;color:var(--orange)">2</div><div class="sc"><strong>Test Queen Agent</strong><p>Epic → GKE in 3–4 hours</p></div></li>
+        <li><div class="sn" style="background:#fff3e8;border:1px solid #FED7AA;color:var(--orange)">3</div><div class="sc"><strong>Scale to full team</strong><p>3-gate approval established</p></div></li>
+      </ol></div>
+  </div>
+</section>
+
+<hr>
+<div class="final">
+  <div class="ft">"Stop Reading Code. Start Asking It Questions."</div>
+  <div class="fs">Designed by Curiosity. Built by Discipline. Delivered by Nirav Mehta.</div>
+  <p style="color:#A8C8E8;font-size:14px;margin-bottom:16px">The agentic SDLC doesn't replace engineers — it removes the hours of archaeology, documentation, and context-switching so engineers can focus on what only humans can do: judgment, creativity, and care.</p>
+  <pre>Code Archaeology → Story Generator → Queen Orchestration → Code to Cloud
+Powered by GitHub Copilot + Claude Code · Both tools, one shared brain</pre>
+</div>
+</div>
+</body>
+</html>
