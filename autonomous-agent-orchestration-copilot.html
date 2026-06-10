@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous SDLC Orchestration — GitHub Copilot Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f8fc;--white:#fff;--s2:#eef1f8;--s3:#e4e9f4;--bd:#cdd5e8;
+    --cop:#1f6feb;--cop2:#0550ae;--navy:#0A2342;
+    --teal:#00838F;--green:#0e9e5c;--orange:#d4600a;--red:#c0392b;
+    --purple:#7c3aed;--amber:#a07800;
+    --tx:#1a2640;--tm:#3f5270;--td:#6b82a0;--g5:#D4E0EC;
+    --sh:0 1px 4px rgba(0,40,100,.08),0 4px 16px rgba(0,40,100,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-size:14px;line-height:1.75}
+
+  .hero{padding:52px 44px 44px;background:linear-gradient(150deg,#0d1117 0%,#161b22 55%,#0d1117 100%);position:relative;overflow:hidden;border-bottom:3px solid var(--cop)}
+  .hero::before{content:'';position:absolute;top:-100px;right:-80px;width:560px;height:560px;background:radial-gradient(circle,rgba(31,111,235,.09) 0%,transparent 65%);pointer-events:none}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:#79c0ff;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+  .eyebrow::before{content:'';width:28px;height:1px;background:#79c0ff}
+  .hero h1{font-family:'Syne',sans-serif;font-size:clamp(22px,3.8vw,38px);font-weight:800;line-height:1.12;margin-bottom:14px;color:#fff;position:relative;z-index:1}
+  .hero h1 .a{color:#79c0ff}.hero h1 .b{color:#56d364}
+  .hero p{color:#8b949e;font-size:15px;max-width:740px;margin-bottom:20px;position:relative;z-index:1}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;position:relative;z-index:1;margin-bottom:16px}
+  .leg{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid}
+  .l-auto{background:rgba(86,211,100,.12);border-color:rgba(86,211,100,.4);color:#56d364}
+  .l-pause{background:rgba(255,196,0,.1);border-color:rgba(255,196,0,.4);color:#e3b341}
+  .l-gate{background:rgba(248,81,73,.1);border-color:rgba(248,81,73,.4);color:#f85149}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
+  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.74);background:rgba(255,255,255,.06)}
+
+  .nav{background:#fff;border-bottom:2px solid var(--bd);padding:0 44px;display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,40,100,.07)}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{padding:13px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s;margin-bottom:-2px}
+  .nav a:hover{color:var(--cop);border-bottom-color:var(--cop)}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:44px 44px 100px}
+  .sec{margin-bottom:56px;scroll-margin-top:60px}
+  .sh{display:flex;align-items:flex-start;gap:16px;margin-bottom:24px}
+  .si{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:var(--sh)}
+  .st{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--tx)}
+  .ss{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);margin-top:4px}
+
+  .card{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:22px;margin-bottom:14px;box-shadow:var(--sh)}
+  .ch{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:9px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+
+  pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;margin:10px 0;color:#c9d1d9;white-space:pre}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(31,111,235,.09);border:1px solid rgba(31,111,235,.18);border-radius:4px;padding:1px 6px;color:var(--cop)}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6a7}.fn2{color:#d2a8ff}.num{color:#79c0ff}.hl{color:#ffd700}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 13px;background:var(--s2);color:var(--td);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:left;border-bottom:2px solid var(--bd)}
+  td{padding:10px 13px;border-bottom:1px solid var(--s3);vertical-align:top;color:var(--tm)}
+  td strong{color:var(--tx)} td code{font-size:11px}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--s2)}
+
+  .alert{border-radius:10px;padding:13px 17px;margin:14px 0;font-size:13px;display:flex;gap:11px;align-items:flex-start}
+  .al-blue{background:#dbeafe;border:1px solid #93c5fd;color:#1e3a8a}
+  .al-green{background:#dcfce7;border:1px solid #86efac;color:#14532d}
+  .al-amber{background:#fff7e6;border:1px solid #f5c97a;color:#7a4a00}
+  .al-red{background:#fee2e2;border:1px solid #fca5a5;color:#7f1d1d}
+  .al-purple{background:#ede9fe;border:1px solid #c4b5fd;color:#3b0764}
+  .al-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+  .alert strong{font-weight:600}
+
+  .phase{border:1px solid var(--bd);border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:var(--sh);background:#fff}
+  .ph-head{padding:13px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .ph-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:3px 10px;border-radius:5px;border:1px solid}
+  .b-auto{background:rgba(14,158,92,.1);border-color:rgba(14,158,92,.35);color:var(--green)}
+  .b-pause{background:rgba(160,120,0,.1);border-color:rgba(160,120,0,.35);color:var(--amber)}
+  .b-gate{background:rgba(192,57,43,.1);border-color:rgba(192,57,43,.4);color:var(--red)}
+  .ph-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--tx)}
+  .ph-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--td);margin-left:auto}
+  .ph-body{padding:0 18px 16px;font-size:13px;color:var(--tm)}
+  .ph-body strong{color:var(--tx)}
+
+  .steps{list-style:none}
+  .step{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid var(--s3)}
+  .step:last-child{border-bottom:none}
+  .sn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+  .sc strong{display:block;color:var(--tx);margin-bottom:2px;font-size:13px;font-weight:600}
+  .sc p{color:var(--tm);font-size:12.5px}
+
+  ul.bl{padding-left:18px}
+  ul.bl li{margin-bottom:6px;color:var(--tm);font-size:13px}
+  ul.bl li strong{color:var(--tx)}
+  hr{border:none;border-top:1px solid var(--bd);margin:34px 0}
+
+  .p-concept .si{background:linear-gradient(135deg,#e8f4ff,#d0e8ff);border:1px solid #93c5e8}
+  .p-arch .si{background:linear-gradient(135deg,#ede9fe,#ddd0f8);border:1px solid #b89de8}
+  .p-pipe .si{background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #7dca9e}
+  .p-code .si{background:linear-gradient(135deg,#fff3e8,#ffe0c0);border:1px solid #f5c097}
+  .p-gates .si{background:linear-gradient(135deg,#fee2e2,#fecaca);border:1px solid #fca5a5}
+  .p-setup .si{background:linear-gradient(135deg,#e6f7f9,#c0ecf2);border:1px solid #7dd4e0}
+  .p-mon .si{background:linear-gradient(135deg,#fffbe8,#fff0b8);border:1px solid #e8d068}
+
+  .final{background:linear-gradient(135deg,#0d1117,#161b22);border-radius:14px;padding:28px;color:#fff;margin-top:8px;border:1px solid #30363d}
+  .final pre{background:#060c16;border-color:#1e2d40;color:#a8c8e8}
+  .final .ft{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">Autonomous Agentic SDLC · Self-Orchestrating Pipeline · GitHub Copilot Edition</div>
+  <h1>Make <span class="a">Copilot Agents</span> Think,<br>Decide &amp; Run <span class="b">On Their Own</span></h1>
+  <p>The same Queen-orchestrated, human-in-the-loop SDLC pipeline — rebuilt natively for GitHub Copilot. Two orchestration models: a local loop driving the Copilot CLI, and a cloud loop driving the GitHub Copilot Coding Agent where PR reviews ARE your approval gates.</p>
+  <div class="legend">
+    <span class="leg l-auto">AUTO = runs itself</span>
+    <span class="leg l-pause">PAUSE = waits for you</span>
+    <span class="leg l-gate">GATE = hard approval needed</span>
+  </div>
+  <div class="chips">
+    <span class="chip">Copilot CLI (copilot -p)</span>
+    <span class="chip">VS Code Agent Mode</span>
+    <span class="chip">GitHub Coding Agent</span>
+    <span class="chip">.github/prompts + chatmodes</span>
+    <span class="chip">MCP (Jira · GitHub)</span>
+    <span class="chip">pipeline-state.json</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#concept">Concept</a>
+  <a href="#models">2 Models</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#pipeline">Pipeline Flow</a>
+  <a href="#orchestrator">Orchestrator Code</a>
+  <a href="#prompts">Agent Prompts</a>
+  <a href="#gates">Human Gates</a>
+  <a href="#setup">Setup</a>
+  <a href="#monitoring">Monitoring</a>
+  <a href="#mapping">Claude ↔ Copilot Map</a>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══ CONCEPT ═══ -->
+<section class="sec p-concept" id="concept">
+  <div class="sh">
+    <div class="si">🧠</div>
+    <div>
+      <div class="st">The Core Concept — Same Brain, Copilot Body</div>
+      <div class="ss">The reasoning loop is identical. Only the runtime changes.</div>
+    </div>
+  </div>
+
+  <div class="alert al-blue">
+    <span class="al-ico">💡</span>
+    <div><strong>Key Insight:</strong> The Queen pattern doesn't care which AI runs the agents. The Queen is a state machine + reasoning loop. In the Claude edition, agents ran via <code>claude -p</code>. In this edition, the same agents run via <code>copilot -p</code> (Copilot CLI) or as GitHub Coding Agent tasks. The pipeline-state.json, the gates, and the agent prompts carry over almost unchanged.</div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">❌ Copilot As Most People Use It (Manual)</div>
+      <ul class="bl">
+        <li>You open Copilot Chat, type a prompt, read the output</li>
+        <li>You copy output and paste it into the next prompt</li>
+        <li>You manually check: "did the tests pass?"</li>
+        <li>You decide when to move from stories → architecture</li>
+        <li>If you forget a step, it's skipped</li>
+        <li>Each chat session has no memory of the last</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch">✅ Copilot As Orchestra (Autonomous)</div>
+      <ul class="bl">
+        <li>You drop in a Jira Epic URL → pipeline starts</li>
+        <li>Queen runs each phase via Copilot CLI or Coding Agent</li>
+        <li>Each agent reads the previous agent's output from state</li>
+        <li>Tests run, fail → Dev agent retries and fixes (3x max)</li>
+        <li>Pipeline pauses only at real decision points (gates)</li>
+        <li>Full audit log of every decision in pipeline-state.json</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🔄 The Reasoning Loop — Identical to the Claude Edition</div>
+    <pre>OBSERVE  → Read current state (pipeline-state.json, test results, Jira, previous output)
+ORIENT   → What phase am I in? What's my goal? What's blocking me?
+DECIDE   → Can I proceed autonomously OR do I need human input?
+ACT      → Execute tools (write code, run tests, update Jira, open PR)
+RECORD   → Write decision + rationale to pipeline-state.json
+REPEAT   → Loop back to OBSERVE unless phase is COMPLETE or BLOCKED</pre>
+    <p style="font-size:13px;color:var(--tm)">This is the <strong>ReAct pattern</strong> (Reasoning + Acting). The Copilot CLI supports it natively: it plans, calls tools, observes results, and iterates — the same agentic loop Claude Code runs.</p>
+  </div>
+</section>
+
+<!-- ═══ TWO MODELS ═══ -->
+<section class="sec p-arch" id="models">
+  <div class="sh">
+    <div class="si">🔀</div>
+    <div>
+      <div class="st">Two Orchestration Models — Pick One (or Mix)</div>
+      <div class="ss">Copilot gives you a choice the Claude edition didn't have</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="border-top:3px solid var(--cop)">
+      <div class="ch" style="color:var(--cop)">Model A — Local Loop (Copilot CLI)</div>
+      <p style="font-size:13px;color:var(--tm);margin-bottom:10px">A Node.js Queen script on your machine (or a runner VM) calls <code>copilot -p</code> for each phase — the direct equivalent of the Claude edition's <code>claude -p</code> loop.</p>
+      <ul class="bl">
+        <li><strong>Closest to the Claude edition</strong> — same queen.js, swap the CLI call</li>
+        <li>Full control over every phase, tool, and retry</li>
+        <li>Gates = console prompts or Slack approvals</li>
+        <li>Runs on your laptop or a CI runner</li>
+        <li>Best for: staging pipelines, experimentation, full visibility</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green)">
+      <div class="ch" style="color:var(--green)">Model B — Cloud Loop (GitHub Coding Agent)</div>
+      <p style="font-size:13px;color:var(--tm);margin-bottom:10px">The Queen creates GitHub Issues per story and assigns them to <strong>Copilot</strong> (the Coding Agent). Copilot works in GitHub Actions, opens PRs. <strong>Your PR review IS the gate.</strong></p>
+      <ul class="bl">
+        <li><strong>Zero infrastructure</strong> — GitHub runs the agents for you</li>
+        <li>Native gates: branch protection + required PR reviews</li>
+        <li>Agent works in an isolated Actions environment</li>
+        <li>Audit trail = Issues, PR history, session logs</li>
+        <li>Best for: production-grade flow, team-wide rollout</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert al-purple">
+    <span class="al-ico">🏆</span>
+    <div><strong>Recommended hybrid:</strong> Use <strong>Model A</strong> for the planning phases (Story → Architecture → Sprint Plan) where outputs are documents, and <strong>Model B</strong> for implementation (Dev → Test) where outputs are PRs and GitHub's review gates shine. The Queen script bridges both: it writes plans locally, then creates Issues and assigns them to Copilot.</div>
+  </div>
+</section>
+
+<!-- ═══ ARCHITECTURE ═══ -->
+<section class="sec p-arch" id="architecture">
+  <div class="sh">
+    <div class="si">🏗</div>
+    <div>
+      <div class="st">Orchestration Architecture</div>
+      <div class="ss">How the pieces connect — the full Copilot system design</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🗺 System Map (Model A + B Hybrid)</div>
+    <pre>┌──────────────────────────────────────────────────────────────────────┐
+│                        QUEEN ORCHESTRATOR                            │
+│                     (Node.js script: queen.js)                       │
+│                                                                      │
+│  ┌─────────┐      pipeline-state.json     ┌──────────────────┐       │
+│  │  INPUT  │─────────────────────────────▶│  State Machine   │       │
+│  │  Jira   │                              │  - current phase │       │
+│  │ Epic URL│                              │  - phase outputs │       │
+│  └─────────┘                              │  - error log     │       │
+│                                           │  - human queue   │       │
+│                                           └────────┬─────────┘       │
+│                                                    │                 │
+│  ┌─────────────────────────────────────────────────▼──────────────┐  │
+│  │                      AGENT RUNNER (two backends)               │  │
+│  │                                                                │  │
+│  │  PLANNING PHASES (Model A — local):                            │  │
+│  │    copilot -p "$(cat .github/prompts/story-agent.prompt.md)"   │  │
+│  │            --allow-tool 'read' --allow-tool 'write'            │  │
+│  │            --log-dir logs/ --log-level debug                   │  │
+│  │                                                                │  │
+│  │  IMPLEMENTATION PHASES (Model B — cloud):                      │  │
+│  │    gh issue create --title "US-G001 ..." --body-file story.md  │  │
+│  │    → assign issue to @copilot  (Coding Agent picks it up)      │  │
+│  │    → Copilot opens PR → branch protection requires your review │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│  MCP Tools available to agents (.vscode/mcp.json / repo mcp config): │
+│   ├── jira: read_epic / create_story / update_status                 │
+│   ├── github: create_pr / push_file / read_file (built-in for CLI)   │
+│   ├── shell: run_tests / run_maven / docker_build (CLI built-in)     │
+│   └── notify: Slack webhook for gate notifications                   │
+└──────────────────────────────────────────────────────────────────────┘</pre>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="ch">📄 pipeline-state.json</div>
+      <p style="font-size:12px;color:var(--tm);margin-bottom:8px">The shared brain. Unchanged from the Claude edition. Every agent reads and writes this file.</p>
+      <pre style="font-size:10.5px">{
+  <span class="str">"phase"</span>: <span class="str">"ARCHITECTURE"</span>,
+  <span class="str">"epic"</span>: { <span class="str">"id"</span>: <span class="str">"E-42"</span>, ... },
+  <span class="str">"stories"</span>: [...],
+  <span class="str">"architecture"</span>: {...},
+  <span class="str">"sprint_plan"</span>: {...},
+  <span class="str">"issues_created"</span>: [...],
+  <span class="str">"prs_open"</span>: [...],
+  <span class="str">"test_results"</span>: {...},
+  <span class="str">"human_queue"</span>: [],
+  <span class="str">"decisions_log"</span>: []
+}</pre>
+    </div>
+    <div class="card">
+      <div class="ch">🛠 Copilot CLI Tools</div>
+      <p style="font-size:12px;color:var(--tm);margin-bottom:8px">Built into <code>copilot</code> — no extra setup.</p>
+      <ul class="bl" style="font-size:12px">
+        <li><strong>Read/Write files</strong> on disk</li>
+        <li><strong>Shell</strong> — run any command (approval-gated)</li>
+        <li><strong>GitHub native</strong> — repos, issues, PRs built in</li>
+        <li><strong>MCP servers</strong> — Jira, Slack, anything</li>
+        <li><strong>Custom agents</strong> — .github/agents/*.md profiles</li>
+        <li><strong>--allow-tool / --deny-tool</strong> — per-run permissions</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch">📡 Notification Channel</div>
+      <p style="font-size:12px;color:var(--tm);margin-bottom:8px">How agents reach you when paused.</p>
+      <ul class="bl" style="font-size:12px">
+        <li><strong>PR review request</strong> — native gate (Model B)</li>
+        <li><strong>GitHub Issue comment</strong> — @mention you</li>
+        <li><strong>Slack webhook</strong> — instant gate message</li>
+        <li><strong>Console + file</strong> — minimal setup (Model A)</li>
+      </ul>
+      <p style="font-size:11.5px;color:var(--td);margin-top:8px;font-style:italic">Start with PR reviews + console. Add Slack later.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PIPELINE ═══ -->
+<section class="sec p-pipe" id="pipeline">
+  <div class="sh">
+    <div class="si">⚡</div>
+    <div>
+      <div class="st">The Autonomous Pipeline — Phase by Phase</div>
+      <div class="ss">Exactly what runs automatically vs what needs you — Copilot runtime per phase</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-gate">GATE</span>
+      <span class="ph-title">📥 Phase 0 — Epic Intake</span>
+      <span class="ph-time">~2 min · Model A</span>
+    </div>
+    <div class="ph-body">
+      <strong>You provide:</strong> Jira Epic URL or pasted Epic text — the only manual trigger in the whole pipeline.<br>
+      <strong>Queen does:</strong> <code>node queen.js --epic https://jira.../E-42</code> → fetches Epic via Jira MCP, writes it into pipeline-state.json, sets phase to STORY_GENERATION.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-auto">AUTO</span>
+      <span class="ph-title">📝 Phase 1 — Story Generation</span>
+      <span class="ph-time">~5-10 min · Model A · copilot -p</span>
+    </div>
+    <div class="ph-body">
+      Queen runs: <code>copilot -p "$(cat .github/prompts/story-agent.prompt.md)" --allow-tool read --allow-tool write</code>.
+      The Story Agent reads the Epic + <code>.claude/context/apis.md</code> + <code>auth.md</code>, generates Type A/B stories with Fibonacci points, acceptance criteria, auth labels, and writes them into pipeline-state.json. <strong>Retry logic:</strong> if output fails JSON schema validation, Queen re-prompts with the error (max 3x).
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-gate">GATE 1</span>
+      <span class="ph-title">🙋 Phase 2 — Story Approval</span>
+      <span class="ph-time">~10 min of your time</span>
+    </div>
+    <div class="ph-body">
+      Queen prints the story table to console + posts to Slack: <em>"14 stories, 52 points. Approve to proceed? [y/n/edit]"</em>.
+      You can edit stories inline (Queen re-opens your $EDITOR with the story JSON). On approval, Queen pushes stories to Jira via MCP and advances to ARCHITECTURE.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-auto">AUTO</span>
+      <span class="ph-title">🏛 Phase 3 — Architecture</span>
+      <span class="ph-time">~10 min · Model A · copilot -p</span>
+    </div>
+    <div class="ph-body">
+      Architect Agent prompt runs with approved stories + <code>deps.md</code> + <code>gke.md</code> context. Produces ARCHITECTURE.md: service boundaries, API contracts, data model changes, Apigee impact, GKE resource changes. Queen validates the output contains all required sections before advancing.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-pause">PAUSE</span>
+      <span class="ph-title">🧐 Phase 4 — Architecture Review</span>
+      <span class="ph-time">~5 min of your time</span>
+    </div>
+    <div class="ph-body">
+      Soft pause: Queen shows the architecture summary and waits 30 min for objections (configurable). No response = auto-proceed. Objection = Queen re-runs Architect Agent with your feedback appended. This is a PAUSE, not a GATE — designed for speed.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-auto">AUTO</span>
+      <span class="ph-title">📅 Phase 5 — Sprint Planning + Issue Creation</span>
+      <span class="ph-time">~5 min · Model A → hands off to Model B</span>
+    </div>
+    <div class="ph-body">
+      Planner Agent orders stories by dependency, splits parallel tracks. Then the Queen <strong>bridges to Model B</strong>: for each story it runs
+      <code>gh issue create --title "US-G001: ..." --body-file story-US-G001.md --label copilot-pipeline</code>
+      and assigns each issue to <strong>@copilot</strong> — the GitHub Coding Agent. Each issue body contains the story, acceptance criteria, links to ARCHITECTURE.md, and the repo's context files do the rest (Copilot Coding Agent reads <code>.github/copilot-instructions.md</code> + <code>AGENTS.md</code> automatically).
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-auto">AUTO</span>
+      <span class="ph-title">💻 Phase 6 — Implementation (Coding Agent)</span>
+      <span class="ph-time">~30-90 min per story · Model B · cloud</span>
+    </div>
+    <div class="ph-body">
+      The <strong>GitHub Copilot Coding Agent</strong> picks up each assigned issue, spins up an isolated GitHub Actions environment, reads <code>AGENTS.md</code> + <code>copilot-instructions.md</code> + <code>CodeFixes/</code>, implements the story, runs <code>mvn test</code> in its environment, and opens a <strong>draft PR</strong> per story. Failing tests → the agent iterates in-session. You can watch progress live in the PR's session log.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-auto">AUTO</span>
+      <span class="ph-title">🧪 Phase 7 — Test &amp; CI Verification</span>
+      <span class="ph-time">~10 min per PR · GitHub Actions</span>
+    </div>
+    <div class="ph-body">
+      Your existing CI workflow runs on each Copilot PR: unit tests, JaCoCo coverage threshold (80%), Trivy scan, customer contract tests (Playwright). Queen polls PR check status via <code>gh pr checks</code>. Red checks → Queen comments on the PR with the failure log and <strong>@copilot</strong> mention — the Coding Agent picks the comment up and pushes fixes (max 3 rounds, then escalates to human_queue).
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-gate">GATE 2</span>
+      <span class="ph-title">✅ Phase 8 — PR Review = The Native Gate</span>
+      <span class="ph-time">~15 min of your time</span>
+    </div>
+    <div class="ph-body">
+      <strong>This is where Copilot's model beats a custom gate:</strong> branch protection requires your review on every Copilot PR. You review the diff like any teammate's PR. Request changes → Coding Agent revises. Approve + merge → Queen detects the merge and advances. <em>No custom approval code needed — GitHub's review system IS the gate.</em>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-head">
+      <span class="ph-badge b-gate">GATE 3</span>
+      <span class="ph-title">🚀 Phase 9 — Deploy to GKE</span>
+      <span class="ph-time">~10 min · GitHub Actions + Environments</span>
+    </div>
+    <div class="ph-body">
+      Merge to main auto-deploys to <strong>staging</strong> (GKE) + smoke tests. Production deploy uses a <strong>GitHub Environment with required reviewers</strong> — the deploy job pauses until you click Approve in the Actions UI. Post-deploy: smoke tests + customer contract verification. Failure → automatic <code>kubectl rollout undo</code> + alert.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ORCHESTRATOR CODE ═══ -->
+<section class="sec p-code" id="orchestrator">
+  <div class="sh">
+    <div class="si">⚙️</div>
+    <div>
+      <div class="st">The Queen Orchestrator — queen.js for Copilot</div>
+      <div class="ss">Same skeleton as the Claude edition — the agent runner is swapped</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">👑 queen.js — Core Loop (Copilot backend)</div>
+    <pre><span class="cm">// queen.js — Queen Orchestrator, GitHub Copilot edition</span>
+<span class="cm">// Prereqs: npm i -g @github/copilot   |   gh auth login</span>
+<span class="kw">const</span> { execSync, spawnSync } = require(<span class="str">"child_process"</span>);
+<span class="kw">const</span> fs = require(<span class="str">"fs"</span>);
+
+<span class="kw">const</span> STATE = <span class="str">"pipeline-state.json"</span>;
+<span class="kw">const</span> state = () =&gt; JSON.parse(fs.readFileSync(STATE));
+<span class="kw">const</span> save  = (s) =&gt; fs.writeFileSync(STATE, JSON.stringify(s, <span class="kw">null</span>, 2));
+
+<span class="cm">// ── Agent runner: Model A (local Copilot CLI) ──────────────</span>
+<span class="fn2">function</span> <span class="hl">runCopilotAgent</span>(promptFile, extraContext = <span class="str">""</span>) {
+  <span class="kw">const</span> prompt = fs.readFileSync(promptFile, <span class="str">"utf8"</span>)
+    + <span class="str">"\n\n## CURRENT PIPELINE STATE\n"</span>
+    + fs.readFileSync(STATE, <span class="str">"utf8"</span>) + extraContext;
+
+  <span class="cm">// Non-interactive run; tools whitelisted per-phase; logs kept</span>
+  <span class="kw">const</span> r = spawnSync(<span class="str">"copilot"</span>, [
+    <span class="str">"-p"</span>, prompt,
+    <span class="str">"--allow-tool"</span>, <span class="str">"read"</span>,
+    <span class="str">"--allow-tool"</span>, <span class="str">"write"</span>,
+    <span class="str">"--allow-tool"</span>, <span class="str">"shell(mvn test)"</span>,   <span class="cm">// scoped shell access</span>
+    <span class="str">"--log-dir"</span>, <span class="str">"logs/"</span>,
+    <span class="str">"--log-level"</span>, <span class="str">"debug"</span>
+  ], { encoding: <span class="str">"utf8"</span>, maxBuffer: 64 * 1024 * 1024 });
+
+  <span class="kw">if</span> (r.status !== 0) <span class="kw">throw new</span> Error(<span class="str">"Agent failed: "</span> + r.stderr);
+  <span class="kw">return</span> r.stdout;
+}
+
+<span class="cm">// ── Agent runner: Model B (GitHub Coding Agent via Issues) ──</span>
+<span class="fn2">function</span> <span class="hl">assignStoryToCodingAgent</span>(story) {
+  fs.writeFileSync(<span class="str">`story-${story.id}.md`</span>, renderStoryBody(story));
+  <span class="kw">const</span> url = execSync(
+    <span class="str">`gh issue create --title "${story.id}: ${story.title}" `</span> +
+    <span class="str">`--body-file story-${story.id}.md --label copilot-pipeline`</span>,
+    { encoding: <span class="str">"utf8"</span> }).trim();
+  <span class="cm">// Assign to Copilot Coding Agent — it picks the issue up automatically</span>
+  execSync(<span class="str">`gh issue edit ${url} --add-assignee copilot`</span>);
+  <span class="kw">return</span> url;
+}
+
+<span class="cm">// ── Gate helper (console; swap for Slack later) ────────────</span>
+<span class="fn2">function</span> <span class="hl">gate</span>(message) {
+  console.log(<span class="str">"\n🛑 GATE: "</span> + message);
+  <span class="kw">const</span> answer = require(<span class="str">"readline-sync"</span>).question(<span class="str">"[y/n/edit] &gt; "</span>);
+  <span class="kw">if</span> (answer === <span class="str">"edit"</span>) execSync(<span class="str">`${process.env.EDITOR} ${STATE}`</span>, {stdio:<span class="str">"inherit"</span>});
+  <span class="kw">return</span> answer !== <span class="str">"n"</span>;
+}
+
+<span class="cm">// ── Main state machine ──────────────────────────────────────</span>
+<span class="kw">const</span> PHASES = {
+  STORY_GENERATION: () =&gt; {
+    runCopilotAgent(<span class="str">".github/prompts/story-agent.prompt.md"</span>);
+    <span class="kw">return</span> <span class="str">"STORY_APPROVAL"</span>;
+  },
+  STORY_APPROVAL: () =&gt; {
+    <span class="kw">if</span> (!gate(<span class="str">`${state().stories.length} stories generated. Approve?`</span>))
+      <span class="kw">return</span> <span class="str">"STORY_GENERATION"</span>;       <span class="cm">// regenerate with feedback</span>
+    execSync(<span class="str">"node push-stories-to-jira.js"</span>);
+    <span class="kw">return</span> <span class="str">"ARCHITECTURE"</span>;
+  },
+  ARCHITECTURE: () =&gt; {
+    runCopilotAgent(<span class="str">".github/prompts/architect-agent.prompt.md"</span>);
+    <span class="kw">return</span> <span class="str">"SPRINT_PLAN"</span>;
+  },
+  SPRINT_PLAN: () =&gt; {
+    runCopilotAgent(<span class="str">".github/prompts/planner-agent.prompt.md"</span>);
+    <span class="cm">// Bridge to Model B — create issues, assign to Coding Agent</span>
+    <span class="kw">const</span> s = state();
+    s.issues_created = s.sprint_plan.ordered_stories
+      .map(story =&gt; assignStoryToCodingAgent(story));
+    save(s);
+    <span class="kw">return</span> <span class="str">"AWAIT_PRS"</span>;
+  },
+  AWAIT_PRS: () =&gt; {
+    <span class="cm">// Poll PR checks; comment @copilot on failures (max 3 rounds)</span>
+    execSync(<span class="str">"node poll-and-heal-prs.js"</span>, {stdio:<span class="str">"inherit"</span>});
+    <span class="kw">return</span> <span class="str">"DONE"</span>;  <span class="cm">// merges + deploy are gated natively in GitHub</span>
+  }
+};
+
+<span class="kw">let</span> phase = state().phase || <span class="str">"STORY_GENERATION"</span>;
+<span class="kw">while</span> (phase !== <span class="str">"DONE"</span>) {
+  console.log(<span class="str">`\n▶ PHASE: ${phase}`</span>);
+  phase = PHASES[phase]();
+  <span class="kw">const</span> s = state(); s.phase = phase; save(s);
+}</pre>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">🔁 poll-and-heal-prs.js — Self-Healing CI</div>
+      <pre style="font-size:11px"><span class="cm">// For each open copilot-pipeline PR:</span>
+<span class="cm">//  1. gh pr checks &lt;n&gt; --json</span>
+<span class="cm">//  2. if failing and rounds &lt; 3:</span>
+<span class="cm">//     gh pr comment &lt;n&gt; --body</span>
+<span class="cm">//     "@copilot tests failing:</span>
+<span class="cm">//      &lt;paste failure log&gt;</span>
+<span class="cm">//      Fix the test or the code,</span>
+<span class="cm">//      do not change the contract."</span>
+<span class="cm">//  3. Coding Agent sees the mention,</span>
+<span class="cm">//     pushes a fix to the same PR</span>
+<span class="cm">//  4. rounds == 3 → human_queue +</span>
+<span class="cm">//     Slack alert, stop touching PR</span></pre>
+    </div>
+    <div class="card">
+      <div class="ch">🧯 Retry &amp; Escalation Rules</div>
+      <ul class="bl">
+        <li><strong>Schema-invalid agent output</strong> → re-prompt with validation error, max 3x</li>
+        <li><strong>Failing PR checks</strong> → @copilot comment with logs, max 3 rounds</li>
+        <li><strong>Same error twice in a row</strong> → escalate immediately (don't loop)</li>
+        <li><strong>Customer contract test failure</strong> → always escalate, never auto-fix</li>
+        <li><strong>Anything in human_queue</strong> → pipeline pauses that story, others continue</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ AGENT PROMPTS ═══ -->
+<section class="sec p-code" id="prompts">
+  <div class="sh">
+    <div class="si">📜</div>
+    <div>
+      <div class="st">Agent Prompts — Copilot Native Locations</div>
+      <div class="ss">Where each agent definition lives so Copilot picks it up automatically</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">📁 File Layout</div>
+    <pre>repo-root/
+├── AGENTS.md                              <span class="cm"># Coding Agent + CLI read this automatically</span>
+├── .github/
+│   ├── copilot-instructions.md            <span class="cm"># Every Copilot surface reads this</span>
+│   ├── prompts/                           <span class="cm"># Reusable agent prompts (used by queen.js + /commands)</span>
+│   │   ├── story-agent.prompt.md
+│   │   ├── architect-agent.prompt.md
+│   │   ├── planner-agent.prompt.md
+│   │   └── reviewer-agent.prompt.md
+│   ├── chatmodes/                         <span class="cm"># Custom chat modes for VS Code (interactive use)</span>
+│   │   ├── story-agent.chatmode.md
+│   │   └── architect.chatmode.md
+│   └── workflows/
+│       ├── ci.yml                         <span class="cm"># Tests + coverage + Trivy on every PR</span>
+│       └── deploy.yml                     <span class="cm"># Staging auto / Production environment-gated</span>
+└── pipeline-state.json                    <span class="cm"># The shared brain (gitignored)</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="ch">📝 Example: story-agent.prompt.md (front-matter included)</div>
+    <pre>---
+mode: agent
+description: Generate Type A + B stories from an Epic using repo context
+---
+You are the STORY AGENT in an autonomous SDLC pipeline.
+
+## Inputs
+- The Epic and current pipeline state are appended below this prompt.
+- Read .claude/context/apis.md and .claude/context/auth.md for service context.
+
+## Your Job
+1. Generate user stories: Type A (existing behaviour) + Type B (gaps/new work)
+2. Each story: title, user story, acceptance criteria (max 5, Given/When/Then),
+   Fibonacci points (1/2/3/5/8 — 13 means split), auth label
+   (BASIC_AUTH_VIA_APIGEE | JWT | PUBLIC), risk (HIGH/MED/LOW)
+3. Write the stories array into pipeline-state.json under "stories"
+4. Do NOT invent endpoints — only reference what exists in apis.md
+
+## Output Contract (validated by the Queen)
+pipeline-state.json must parse, stories[] non-empty,
+every story has: id, title, points, auth, risk, acceptance[]</pre>
+    <p style="font-size:12.5px;color:var(--tm)">The same file works three ways: the Queen pipes it through <code>copilot -p</code>, developers run it interactively as <code>/story-agent</code> in VS Code Copilot Chat, and the front-matter makes it an agent-mode prompt.</p>
+  </div>
+
+  <div class="alert al-blue">
+    <span class="al-ico">💡</span>
+    <div><strong>AGENTS.md is the Coding Agent's system prompt.</strong> When a story issue is assigned to @copilot, the Coding Agent automatically reads <code>AGENTS.md</code> and <code>.github/copilot-instructions.md</code> from the repo. Your hard rules (never parse Basic Auth, never hardcode secrets, JVM = 75% of container limit) apply to every story with zero extra prompting — exactly like CLAUDE.md does for Claude Code.</div>
+  </div>
+</section>
+
+<!-- ═══ GATES ═══ -->
+<section class="sec p-gates" id="gates">
+  <div class="sh">
+    <div class="si">🛑</div>
+    <div>
+      <div class="st">Human Gates — Native GitHub Mechanisms</div>
+      <div class="ss">The Copilot edition's biggest advantage: two of three gates need zero custom code</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">🚦 The Three Gates</div>
+    <table>
+      <tr><th>Gate</th><th>What You Approve</th><th>Mechanism</th><th>Custom Code?</th></tr>
+      <tr>
+        <td><strong>GATE 1 — Stories</strong></td>
+        <td>Story list, points, scope before Jira push</td>
+        <td>Queen console prompt (or Slack interactive message)</td>
+        <td>~10 lines in queen.js</td>
+      </tr>
+      <tr>
+        <td><strong>GATE 2 — Code</strong></td>
+        <td>Every PR the Coding Agent opens</td>
+        <td><strong>Branch protection + required PR review</strong> — Copilot's PRs cannot merge without your approval; "Request changes" sends the agent back to work</td>
+        <td>None — native GitHub</td>
+      </tr>
+      <tr>
+        <td><strong>GATE 3 — Production Deploy</strong></td>
+        <td>Staging → Production promotion</td>
+        <td><strong>GitHub Environment "production" with required reviewers</strong> — deploy job pauses in Actions UI until you approve</td>
+        <td>None — native GitHub</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">🔒 Branch Protection Setup (GATE 2)</div>
+      <pre style="font-size:11px"># Settings → Branches → main:
+✓ Require a pull request before merging
+✓ Require approvals: 1
+✓ Dismiss stale approvals on new commits
+✓ Require status checks: ci / tests,
+  ci / coverage, ci / contract-tests
+✓ Do not allow bypassing the above
+
+# Result: Coding Agent PRs are
+# physically unable to merge
+# without your review. That IS
+# the gate.</pre>
+    </div>
+    <div class="card">
+      <div class="ch">🏭 Environment Gate Setup (GATE 3)</div>
+      <pre style="font-size:11px"># Settings → Environments → production:
+✓ Required reviewers: you (+ lead)
+✓ Wait timer: 0 min
+✓ Deployment branches: main only
+
+# deploy.yml:
+jobs:
+  deploy-prod:
+    environment: production   # ← pauses
+    runs-on: ubuntu-latest    #   here for
+    steps:                    #   approval
+      - run: kubectl apply -k k8s/prod</pre>
+    </div>
+  </div>
+
+  <div class="alert al-red">
+    <span class="al-ico">🚨</span>
+    <div><strong>Decision rule for the agents (same as Claude edition):</strong> proceed autonomously when the action is reversible and inside the approved plan; PAUSE when ambiguous; GATE when irreversible (Jira mass-push, customer-contract change, production deploy). Customer contract test failures always escalate to a human — never auto-fixed.</div>
+  </div>
+</section>
+
+<!-- ═══ SETUP ═══ -->
+<section class="sec p-setup" id="setup">
+  <div class="sh">
+    <div class="si">🧰</div>
+    <div>
+      <div class="st">Setup — Zero to Running Pipeline</div>
+      <div class="ss">One-time, ~45 minutes</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <ol class="steps">
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--cop)">1</div>
+        <div class="sc"><strong>Install the Copilot CLI + GitHub CLI</strong>
+          <pre style="font-size:11px">npm install -g @github/copilot
+copilot          # sign in once interactively
+gh auth login    # GitHub CLI for issues/PRs</pre>
+          <p>Requires Copilot Pro/Business/Enterprise. Coding Agent requires it enabled in org policy.</p></div></li>
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--cop)">2</div>
+        <div class="sc"><strong>Run Code Archaeology on the repo first</strong>
+          <p>The pipeline depends on the context files: <code>AGENTS.md</code>, <code>copilot-instructions.md</code>, <code>.claude/context/*</code>, <code>CodeFixes/</code>. The Coding Agent and CLI both read these automatically — they are the agents' institutional memory.</p></div></li>
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--cop)">3</div>
+        <div class="sc"><strong>Add the agent prompt files</strong>
+          <p>Create <code>.github/prompts/story-agent.prompt.md</code>, <code>architect-agent.prompt.md</code>, <code>planner-agent.prompt.md</code>, <code>reviewer-agent.prompt.md</code> (templates in this doc).</p></div></li>
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--cop)">4</div>
+        <div class="sc"><strong>Configure MCP for Jira</strong>
+          <pre style="font-size:11px"># .vscode/mcp.json (CLI + VS Code) — add your Jira MCP server
+{ "servers": { "jira": { "url": "https://your-jira-mcp...", "type": "http" } } }</pre>
+          <p>The Coding Agent gets its own MCP config in repo settings → Copilot → Coding agent → MCP.</p></div></li>
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--cop)">5</div>
+        <div class="sc"><strong>Turn on the native gates</strong>
+          <p>Branch protection on <code>main</code> (GATE 2) + <code>production</code> environment with required reviewers (GATE 3). Five minutes in repo settings.</p></div></li>
+      <li><div class="sn" style="background:#dbeafe;border:1px solid #93c5fd;color:var(--cop)">6</div>
+        <div class="sc"><strong>Drop in queen.js + start</strong>
+          <pre style="font-size:11px">npm i readline-sync
+node queen.js --epic https://yourjira/browse/E-42</pre>
+          <p>Watch Phase 1 generate stories, approve at GATE 1, then watch issues appear and the Coding Agent open PRs.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══ MONITORING ═══ -->
+<section class="sec p-mon" id="monitoring">
+  <div class="sh">
+    <div class="si">📊</div>
+    <div>
+      <div class="st">Monitoring — Watching the Orchestra Play</div>
+      <div class="ss">Where to look when the pipeline is running</div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="ch">🖥 Local (Model A)</div>
+      <ul class="bl" style="font-size:12.5px">
+        <li><code>tail -f logs/</code> — Copilot CLI debug logs per phase</li>
+        <li><code>watch cat pipeline-state.json</code> — live state</li>
+        <li><code>decisions_log[]</code> — every agent decision + rationale</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch">☁️ Cloud (Model B)</div>
+      <ul class="bl" style="font-size:12.5px">
+        <li><strong>Issue board</strong> — label <code>copilot-pipeline</code> = live story status</li>
+        <li><strong>PR session logs</strong> — click "View session" on any Coding Agent PR to watch it reason in real time</li>
+        <li><strong>Actions tab</strong> — CI + deploy runs, environment approvals</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ch">📈 Daily Digest</div>
+      <ul class="bl" style="font-size:12.5px">
+        <li>Cron job posts to Slack: stories done / in-flight / blocked</li>
+        <li>human_queue items older than 4h get re-pinged</li>
+        <li>Weekly: cycle-time per story (issue-open → PR-merged)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MAPPING ═══ -->
+<section class="sec p-concept" id="mapping">
+  <div class="sh">
+    <div class="si">🔁</div>
+    <div>
+      <div class="st">Claude Edition ↔ Copilot Edition — Component Map</div>
+      <div class="ss">Everything you built for Claude has a direct Copilot equivalent</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>Component</th><th>Claude Edition</th><th>Copilot Edition</th></tr>
+      <tr><td><strong>Agent runtime (local)</strong></td><td><code>claude -p</code> (Claude Code CLI)</td><td><code>copilot -p</code> (Copilot CLI)</td></tr>
+      <tr><td><strong>Agent runtime (cloud)</strong></td><td>Claude Code GitHub Actions</td><td>GitHub Copilot Coding Agent (assign issues to @copilot)</td></tr>
+      <tr><td><strong>Repo system prompt</strong></td><td><code>CLAUDE.md</code></td><td><code>AGENTS.md</code> + <code>.github/copilot-instructions.md</code></td></tr>
+      <tr><td><strong>Agent definitions</strong></td><td><code>.claude/agents/*.md</code></td><td><code>.github/prompts/*.prompt.md</code> + <code>.github/chatmodes/*.chatmode.md</code></td></tr>
+      <tr><td><strong>Context files</strong></td><td><code>.claude/context/*.md</code></td><td>Same files — both tools read them (one brain)</td></tr>
+      <tr><td><strong>Tool permissions</strong></td><td><code>--allowedTools</code></td><td><code>--allow-tool / --deny-tool</code> (scoped, e.g. <code>shell(mvn test)</code>)</td></tr>
+      <tr><td><strong>MCP servers</strong></td><td><code>.mcp.json</code></td><td><code>.vscode/mcp.json</code> (CLI/IDE) + repo Coding Agent MCP settings</td></tr>
+      <tr><td><strong>State machine</strong></td><td>pipeline-state.json + queen.js</td><td>Identical — unchanged</td></tr>
+      <tr><td><strong>GATE 1 (stories)</strong></td><td>Console / Slack prompt</td><td>Identical — unchanged</td></tr>
+      <tr><td><strong>GATE 2 (code)</strong></td><td>Custom approval step</td><td><strong>Native:</strong> branch protection + required PR review</td></tr>
+      <tr><td><strong>GATE 3 (deploy)</strong></td><td>Custom approval step</td><td><strong>Native:</strong> GitHub Environment required reviewers</td></tr>
+      <tr><td><strong>Self-healing CI</strong></td><td>Agent reruns tests locally</td><td>@copilot PR comment → Coding Agent pushes fixes</td></tr>
+      <tr><td><strong>Audit trail</strong></td><td>decisions_log[] in state file</td><td>decisions_log[] + Issues + PR history + session logs</td></tr>
+    </table>
+  </div>
+
+  <div class="alert al-green">
+    <span class="al-ico">✅</span>
+    <div><strong>Bottom line:</strong> the Queen pattern is runtime-agnostic. Your context files (<code>.claude/context/</code>, <code>AGENTS.md</code>, <code>CodeFixes/</code>) power both editions without modification — run planning locally with whichever CLI your team licenses, and let the GitHub Coding Agent + native review gates handle implementation.</div>
+  </div>
+</section>
+
+<hr>
+<div class="final">
+  <div class="ft">📍 Start Today — Minimal Viable Pipeline</div>
+  <pre># 1. Install
+npm install -g @github/copilot && copilot   # sign in
+gh auth login
+
+# 2. Prereq: archaeology files exist (AGENTS.md, copilot-instructions.md, context/)
+#    If not: run the code-archaeology skill first.
+
+# 3. Smoke-test the local agent runner (Model A)
+copilot -p "$(cat .github/prompts/story-agent.prompt.md)" \
+        --allow-tool read --allow-tool write --log-dir logs/
+
+# 4. Smoke-test the cloud agent (Model B)
+gh issue create --title "TEST: add /actuator/info endpoint" \
+                --body "Acceptance: GET /actuator/info returns 200" \
+                --label copilot-pipeline
+gh issue edit &lt;number&gt; --add-assignee copilot
+#    → watch the draft PR appear; review it; that review IS Gate 2.
+
+# 5. Turn on the native gates (5 min in repo settings)
+#    Branch protection on main  +  production environment reviewers
+
+# 6. Run the full pipeline
+node queen.js --epic https://yourjira/browse/E-42</pre>
+  <p style="margin-top:14px;font-family:'Syne',sans-serif;font-style:italic;font-size:13px;color:#79c0ff">Designed by Curiosity. Built by Discipline. Delivered by Nirav Mehta.</p>
+</div>
+
+</div>
+</body>
+</html>
